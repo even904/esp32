@@ -158,7 +158,7 @@ void sntp_initialize(void) {
   esp_sntp_init();
 }
 
-void print_current_time() {
+void log_current_time() {
   // time_t now;
   // char strftime_buf[64];
   // struct tm timeinfo;

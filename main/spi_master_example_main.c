@@ -100,6 +100,74 @@ void create_loading_animation(lv_disp_t *disp) {
   lv_obj_align(spinner, LV_ALIGN_CENTER, 0, 0); // 将 spinner 居中对齐
 }
 
+static lv_obj_t *time_label = NULL;
+void create_time_display(lv_obj_t *container) {
+  time_t now;
+  char strftime_buf[64];
+  struct tm timeinfo;
+
+  time(&now);
+  // Set timezone to China Standard Time
+  setenv("TZ", "CST-8", 1);
+  tzset();
+
+  localtime_r(&now, &timeinfo);
+  strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+  ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
+
+  time_label = lv_label_create(container);
+  lv_label_set_text(time_label, strftime_buf); // 设置文本内容
+  lv_obj_align(time_label, LV_ALIGN_TOP_MID, 0, 20); // 将文本标签置顶并居中对齐
+}
+
+void update_time_display() {
+    time_t now;
+    char strftime_buf[64];
+    struct tm timeinfo;
+
+    time(&now);
+
+    // 设置时区为中国标准时间 (CST-8)
+    setenv("TZ", "CST-8", 1);
+    tzset();
+
+    localtime_r(&now, &timeinfo);
+    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+
+    ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
+
+    if (time_label != NULL) {
+        lv_label_set_text(time_label, strftime_buf); // 更新文本内容
+    }
+}
+
+void create_main_display(lv_disp_t *disp) {
+  // 创建一个容器作为主界面
+  lv_obj_t *main_container = lv_obj_create(lv_disp_get_scr_act(disp));
+  lv_obj_set_size(main_container, lv_disp_get_hor_res(NULL),
+                  lv_disp_get_ver_res(NULL)); // 设置容器大小为全屏
+  lv_obj_align(main_container, LV_ALIGN_CENTER, 0, 0); // 将容器居中对齐
+
+  create_time_display(main_container); // 创建一个时间显示
+
+  // // 创建一个按钮用于切换到设置界面
+  // lv_obj_t *settings_button = lv_btn_create(main_container);
+  // lv_obj_align(settings_button, LV_ALIGN_CENTER, 0, 0); // 将按钮居中对齐
+  // lv_obj_t *settings_label = lv_label_create(settings_button);
+  // lv_label_set_text(settings_label, "Settings"); // 设置按钮文本
+}
+
+static lv_timer_t *lv_timer_handle = NULL;
+
+static void lv_timer_callback(lv_timer_t *timer) {
+    update_time_display();
+}
+
+void start_time_update_lv_timer() {
+    // 创建一个每秒触发一次的 LVGL 定时器
+    lv_timer_handle = lv_timer_create(lv_timer_callback, 1000, NULL);
+}
+
 void check_heap_memory(const char *TAG) {
   // 打印总的可用堆内存
   ESP_LOGI(TAG, "Free heap size: %d bytes", (int)esp_get_free_heap_size());
@@ -242,8 +310,9 @@ void app_main(void) {
   ESP_LOGI(TAG, "Display LVGL Test Image");
   // check_heap_memory();
   if (lvgl_port_lock(0)) {
-    display_test_image(disp);
-    create_loading_animation(disp);
+    // display_test_image(disp);
+    // create_loading_animation(disp);
+    create_main_display(disp);
     lvgl_port_unlock();
   }
 #if ENABLE_MEMORY_CHECK
@@ -255,5 +324,7 @@ void app_main(void) {
 #if ENABLE_MEMORY_CHECK
   check_heap_memory("WiFi Initialized");
 #endif
-  print_current_time();
+  // timer update time configuration
+  start_time_update_lv_timer();
+  // log_current_time(); // Not use, just for testing
 }
