@@ -1,26 +1,28 @@
 #include "wifi_init.h"
 #include "esp_netif_types.h"
+#include <stdint.h>
+#include <string.h>
 
 #ifndef MAC2STR
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 #define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
 #endif
 
-#define AP_WIFI_CHANNEL 1
+#define AP_WIFI_CHANNEL 6
 #define MAX_STA_CONN 4
 
-#define ESP_MAXIMUM_RETRY 5
+#define ESP_MAXIMUM_RETRY 5 //Currently set to 5, HMI can change this value
 
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
 
-static const char *TAG = "wifi";
+static const char *TAG = "WiFi";
 static EventGroupHandle_t s_wifi_event_group;
 static int s_retry_num = 0;
 
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data) {
-  // handle esp as STA events
+  // handle esp as STA events, HMI will be able to restart connection
   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
     esp_wifi_connect();
   } else if (event_base == WIFI_EVENT &&
@@ -54,8 +56,18 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
   }
 }
 
-void wifi_init_sta_ap(const char *sta_ssid, const char *sta_password,
-                      const char *ap_ssid, const char *ap_password) {
+void wifi_init_sta_ap(const char *ap_to_conn_ssid,
+                      const char *ap_to_conn_password,
+                      const char *esp_as_ap_ssid,
+                      const char *esp_as_ap_password) {
+  esp_err_t ret = nvs_flash_init();
+  if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+      ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+    ret = nvs_flash_init();
+  }
+  ESP_ERROR_CHECK(ret);
+
   s_wifi_event_group = xEventGroupCreate();
 
   ESP_ERROR_CHECK(esp_netif_init());
@@ -73,35 +85,37 @@ void wifi_init_sta_ap(const char *sta_ssid, const char *sta_password,
       IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL, NULL));
 
   wifi_config_t wifi_config_sta = {
-      .sta =
-          {
-              .ssid = {*sta_ssid},
-              .password = {*sta_password},
-          },
+      .sta = {
+          .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+          .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
+          .sae_h2e_identifier = "",
+      },
   };
+  strcpy((char *)wifi_config_sta.sta.ssid, ap_to_conn_ssid);
+  strcpy((char *)wifi_config_sta.sta.password, ap_to_conn_password);
+
   wifi_config_t wifi_config_ap = {
       .ap =
-          {
-              .ssid = {*ap_ssid},
-              .ssid_len = strlen(ap_ssid),
-              .channel = AP_WIFI_CHANNEL, // Default channel 1,6,11
-              .password = {*ap_password},
-              .max_connection = MAX_STA_CONN, // Default
-              .authmode = WIFI_AUTH_WPA_WPA2_PSK,
-
-          },
+          {// .ssid = esp_as_ap_ssid,
+           .ssid_len = strlen(esp_as_ap_ssid),
+           .channel = AP_WIFI_CHANNEL,     // Default channel 1,6,11
+                                           // .password = esp_as_ap_password,
+           .max_connection = MAX_STA_CONN, // Default
+           .authmode = strlen(esp_as_ap_password) == 0
+                           ? WIFI_AUTH_OPEN
+                           : WIFI_AUTH_WPA_WPA2_PSK},
   };
-
-  if (strlen(ap_password) == 0) {
-    wifi_config_ap.ap.authmode = WIFI_AUTH_OPEN;
-  }
+  strcpy((char *)wifi_config_ap.ap.ssid, esp_as_ap_ssid);
+  strcpy((char *)wifi_config_ap.ap.password, esp_as_ap_password);
 
   ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
   ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config_sta));
   ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config_ap));
+
   ESP_LOGI(TAG,
-           "wifi_init_sta_ap finished. AP_SSID:%s AP_password:%s AP_channel:%d",
-           ap_ssid, ap_password, AP_WIFI_CHANNEL);
+           "wifi_init_sta_ap finished. esp_as_ap_ssid:%s esp_as_ap_password:%s "
+           "AP_channel:%d",
+           esp_as_ap_ssid, esp_as_ap_password, AP_WIFI_CHANNEL);
 
   ESP_ERROR_CHECK(esp_wifi_start());
 }
