@@ -1,6 +1,11 @@
 # 前言
 从元件箱中翻出了一个ESP32,在电赛之后未再学过ESP相关的内容。当前ESP32已经可以接入LLM作为语音助手，充分利用其WiFi联网与蓝牙优势。因此想认真学习一下ESP的WiFi联网功能。
 
+# 项目链接
+
+github: https://github.com/even904/esp32.git
+Document: https://even904.github.io/CloudDoc/
+
 # 任务目标
 
 作为任务完成的标志，我将尝试完成一个WiFi联网天气时钟，应当具有如下基本功能:

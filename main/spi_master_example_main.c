@@ -208,7 +208,7 @@ static lv_disp_t *lvgl_config_init(void) {
   const lvgl_port_display_cfg_t disp_cfg = {
       .io_handle = io_handle,
       .panel_handle = lcd_panel_handle,
-      .buffer_size = DISP_WIDTH * DISP_HEIGHT / 3,
+      .buffer_size = DISP_WIDTH * DISP_HEIGHT / 4,
       .double_buffer = false,
       .hres = DISP_WIDTH,
       .vres = DISP_HEIGHT,
