@@ -1,4 +1,5 @@
 #include "wifi_init.h"
+#include "esp_log.h"
 #include "esp_netif_types.h"
 #include <stdint.h>
 #include <string.h>
@@ -11,7 +12,7 @@
 #define AP_WIFI_CHANNEL 6
 #define MAX_STA_CONN 4
 
-#define ESP_MAXIMUM_RETRY 5 //Currently set to 5, HMI can change this value
+#define ESP_MAXIMUM_RETRY 5 // Currently set to 5, HMI can change this value
 
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
@@ -85,11 +86,12 @@ void wifi_init_sta_ap(const char *ap_to_conn_ssid,
       IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL, NULL));
 
   wifi_config_t wifi_config_sta = {
-      .sta = {
-          .threshold.authmode = WIFI_AUTH_WPA2_PSK,
-          .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
-          .sae_h2e_identifier = "",
-      },
+      .sta =
+          {
+              .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+              .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
+              .sae_h2e_identifier = "",
+          },
   };
   strcpy((char *)wifi_config_sta.sta.ssid, ap_to_conn_ssid);
   strcpy((char *)wifi_config_sta.sta.password, ap_to_conn_password);
@@ -118,4 +120,50 @@ void wifi_init_sta_ap(const char *ap_to_conn_ssid,
            esp_as_ap_ssid, esp_as_ap_password, AP_WIFI_CHANNEL);
 
   ESP_ERROR_CHECK(esp_wifi_start());
+}
+
+// #include "esp_sntp.h"
+
+// void initialize_sntp(void) {
+//   ESP_LOGI(TAG, "Initializing SNTP...");
+//   esp_sntp_stop();
+
+//   // 设置时区为东八区（中国标准时间）
+//   esp_setenv("TZ", "CST-8", 1);
+//   esp_tzset();
+
+//   // 初始化 SNTP
+//   esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
+//   esp_sntp_setservername(0, "pool.ntp.org");    // 可以添加更多服务器
+//   sntp_set_time_sync_notification_cb(NULL); // 设置回调函数（可选）
+
+//   // 启动 SNTP
+//   esp_sntp_init();
+// }
+
+// // 在 Wi-Fi 连接成功后调用此函数
+// void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id,
+//                    void *event_data) {
+//   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+//     esp_wifi_connect();
+//   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+//     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
+//     ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
+//     initialize_sntp(); // 在获得 IP 地址后初始化 SNTP
+//   }
+// }
+#
+void print_current_time() {
+  time_t now;
+  char strftime_buf[64];
+  struct tm timeinfo;
+
+  time(&now);
+  // 将时区设置为中国标准时间
+  setenv("TZ", "CST-8", 1);
+  tzset();
+
+  localtime_r(&now, &timeinfo);
+  strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+  ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
 }

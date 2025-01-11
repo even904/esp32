@@ -160,10 +160,6 @@ static void st7789_spi_init(void) {
   // Attach the LCD to the SPI bus
   ret = spi_bus_add_device(LCD_HOST, &devcfg, &spi);
   ESP_ERROR_CHECK(ret);
-  // Initialize the LCD
-  // lcd_init(spi);
-  // lcd_draw_rectangle(spi, 0, 0, DISP_WIDTH, DISP_HEIGHT, 0x0000);//Black
-  // lcd_draw_rectangle(spi, 0, 0, DISP_WIDTH, DISP_HEIGHT, 0xffff);
 }
 
 static lv_disp_t *lvgl_config_init(void) {
@@ -239,7 +235,7 @@ void app_main(void) {
   // 1. SPI Init
   st7789_spi_init();
   // 2~4. Install LCD panel driver & Add Display
-  const lv_disp_t *disp = lvgl_config_init();
+  lv_disp_t *disp = lvgl_config_init();
   // Check if display is initialized, if so, disp pointer is not NULL
   ESP_LOGI(TAG, "Is num of disp_handle: %x", (uintptr_t)(disp));
   // lv_disp_set_rotation(disp, LV_DISPLAY_ROTATION_270);
@@ -259,4 +255,5 @@ void app_main(void) {
 #if ENABLE_MEMORY_CHECK
   check_heap_memory("WiFi Initialized");
 #endif
+  print_current_time();
 }
