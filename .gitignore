@@ -1,0 +1,9 @@
+/.cache
+/.devcontainer
+/.vscode
+/build
+/managed_components
+main/pretty_effect.c
+main/pretty_effect.h
+main/image.jpg
+main/image1.jpg
