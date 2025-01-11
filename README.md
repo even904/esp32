@@ -1,46 +1,37 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | -------- | -------- | -------- |
+# 前言
+从元件箱中翻出了一个ESP32,在电赛之后未再学过ESP相关的内容。当前ESP32已经可以接入LLM作为语音助手，充分利用其WiFi联网与蓝牙优势。因此想认真学习一下ESP的WiFi联网功能。
 
-# SPI Host Driver Example
+# 任务目标
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+作为任务完成的标志，我将尝试完成一个WiFi联网天气时钟，应当具有如下基本功能:
+- 接入家用WiFi联网
+- 屏幕显示
+- 实时时钟
+- 倒计时
 
-This example aims to show how to use SPI Host driver API, like `spi_transaction_t` and spi_device_queue.
+其他功能后续视情况添加。
 
-If you are looking for code to drive LCDs in general, rather than code that uses the SPI master, that may be a better example to look at as it uses ESP-IDFs built-in LCD support rather than doing all the low-level work itself, which can be found at `examples/peripherals/lcd/tjpgd/`
+# 完成表
+- [x] 接入家用WiFi联网
+- [x] 屏幕显示
+- [ ] 实时时钟
+- [ ] 倒计时
 
-## How to Use Example
+***
 
-### Hardware Required
+- [ ] 网络天气
+- [ ] 硬件一体化
+- [ ] 外壳设计与封装
 
-* An ESP development board, with SPI LCD
+# 研究方法与内容
+了解ESP32WiFi工作原理。WiFi作为一种通信方式，其标准由IEEE规定。ESP32这种低功耗IoT应用场景，以2.4GHz作为主要频率。ESP32设计支持的WiFi标准是IEEE 802.11 b/g/n。三个标准的主要区别在于调制方式(IR/DSSS/CCK/FHSS/OFDM)、编码方式(64-QAM)、信道带宽和理论速率。[这篇文章](https://www.shuzixingkong.net/article/1653)作了详细介绍。
 
-**Connection** :
-
-Depends on boards. The GPIO number used by this example can be changed in `spi_master_example_main.c` No wiring is required on ESP-WROVER-KIT
-
-Especially, please pay attention to the level used to turn on the LCD backlight, some LCD module needs a low level to turn it on, while others take a high level. You can change the backlight level macro LCD_BK_LIGHT_ON_LEVEL in `spi_master_example_main.c`.
-
-### Build and Flash
-
-Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
-
-(To exit the serial monitor, type ``Ctrl-]``.)
-
-See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
-
-## Example Output
-
-On ESP-WROVER-KIT there will be:
-
+WiFi作为网络基础服务，应当按照网络系统的模型来研究。
+```mermaid
+flowchart LR
+    物理层-->数据链路层-->网络层-->传输层-->会话层-->表示层-->应用层
 ```
-LCD ID: 00000000
-ILI9341 detected.
-LCD ILI9341 initialization.
-```
+由于不可能对每一个标准以及层级都进行详细研究，因此需要选取其中最关键的部分。
 
-At the meantime `ESP32` will be displayed on the connected LCD screen.
-
-## Troubleshooting
-
-For any technical queries, please open an [issue] (https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+在这个[项目](【ESP32-WiFi学习】任务目标.md)中，需要实现任务目标的同时构建更稳健的代码，以便在各种网络情况下程序的正常运行，这要求程序具有对WiFi通信的错误处理机制。硬件驱动层和应用层，乐鑫以及开源社区已经提供了专门的函数库。
+要实现更健壮的通信机制，关键部分在于深入理解数据链路层及其协议，也就是理解其数据帧及管理帧。了解WiFi通信如何通过管理帧进行错误处理，也就是在遇到问题时会发送什么类型的帧内容，是构建更健壮的通信机制的基础。
