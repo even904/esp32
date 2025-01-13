@@ -15,8 +15,11 @@
 
 #define ESP_MAXIMUM_RETRY 5 // Currently set to 5, HMI can change this value
 
-#define WIFI_CONNECTED_BIT BIT0
-#define WIFI_FAIL_BIT BIT1
+// Event group bit definitions, expand if needed
+#define WIFI_IS_CONNECTED_BIT BIT0 // 1: connected, 0: disconnected
+#define IP_IS_OBTAINED_BIT BIT1    // 1: IP obtained, 0: IP not obtained
+#define SNTP_INITIALIZED_BIT BIT2   // 1: SNTP initialized, 0: SNTP not initialized
+
 
 static const char *TAG = "WiFi";
 static EventGroupHandle_t s_wifi_event_group;
@@ -34,7 +37,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
       s_retry_num++;
       ESP_LOGI(TAG, "retry to connect to the AP");
     } else {
-      xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
+      xEventGroupClearBits(s_wifi_event_group, WIFI_IS_CONNECTED_BIT);
     }
     ESP_LOGI(TAG, "connect to the AP fail");
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
@@ -42,7 +45,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
     s_retry_num = 0;
     sntp_initialize(); // Initialize SNTP after getting IP
-    xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+    xEventGroupSetBits(s_wifi_event_group, WIFI_IS_CONNECTED_BIT);
   }
   // handle esp as AP events
   else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
@@ -63,6 +66,7 @@ void wifi_init_sta_ap(const char *ap_to_conn_ssid,
                       const char *ap_to_conn_password,
                       const char *esp_as_ap_ssid,
                       const char *esp_as_ap_password) {
+  // 1. Initialize NVS
   esp_err_t ret = nvs_flash_init();
   if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
       ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -71,22 +75,28 @@ void wifi_init_sta_ap(const char *ap_to_conn_ssid,
   }
   ESP_ERROR_CHECK(ret);
 
+  // 2. Create event group
   s_wifi_event_group = xEventGroupCreate();
 
+  // 3. Network initialization
+  // 3.1 Netif initialize (TCP/IP network interface)
   ESP_ERROR_CHECK(esp_netif_init());
+  // 3.2 Create default event loop
   ESP_ERROR_CHECK(esp_event_loop_create_default());
   esp_netif_create_default_wifi_sta();
   esp_netif_create_default_wifi_ap();
 
+  // 3.3 Initialize Wi-Fi
   wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
   ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
-  // Register event handler
+  // 3.4 Register event handler
   ESP_ERROR_CHECK(esp_event_handler_instance_register(
       WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL, NULL));
   ESP_ERROR_CHECK(esp_event_handler_instance_register(
       IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL, NULL));
-
+  
+  // 3.5 Config start WiFi as AP and STA
   wifi_config_t wifi_config_sta = {
       .sta =
           {
@@ -124,22 +134,21 @@ void wifi_init_sta_ap(const char *ap_to_conn_ssid,
   ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-static void time_sync_notification_cb(struct timeval *tv)
-{
-    if (tv == NULL) {
-        ESP_LOGE(TAG, "Time synchronization failed.");
-    }
+static void time_sync_notification_cb(struct timeval *tv) {
+  if (tv == NULL) {
+    ESP_LOGE(TAG, "Time synchronization failed.");
+  }
 
-    // 将时间转换为本地时间
-    struct tm timeinfo;
-    localtime_r(&tv->tv_sec, &timeinfo);
+  // 将时间转换为本地时间
+  struct tm timeinfo;
+  localtime_r(&tv->tv_sec, &timeinfo);
 
-    // 格式化输出时间
-    char strftime_buf[64];
-    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    ESP_LOGI(TAG, "The current date/time is: %s", strftime_buf);
+  // 格式化输出时间
+  char strftime_buf[64];
+  strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+  ESP_LOGI(TAG, "The current date/time is: %s", strftime_buf);
 }
-    
+
 // Avoid redefining the function, change init to initialize
 void sntp_initialize(void) {
   ESP_LOGI(TAG, "Initializing SNTP...");
@@ -152,23 +161,9 @@ void sntp_initialize(void) {
   // Initialize SNTP
   esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
   esp_sntp_setservername(0, "pool.ntp.org"); // More time servers can be added
-  sntp_set_time_sync_notification_cb(time_sync_notification_cb);  // Set callback to get time
+  sntp_set_time_sync_notification_cb(
+      time_sync_notification_cb); // Set callback to get time
 
   // Start SNTP
   esp_sntp_init();
-}
-
-void log_current_time() {
-  // time_t now;
-  // char strftime_buf[64];
-  // struct tm timeinfo;
-
-  // time(&now);
-  // // Set timezone to China Standard Time
-  // setenv("TZ", "CST-8", 1);
-  // tzset();
-
-  // localtime_r(&now, &timeinfo);
-  // strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-  // ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
 }

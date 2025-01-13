@@ -326,5 +326,4 @@ void app_main(void) {
 #endif
   // timer update time configuration
   start_time_update_lv_timer();
-  // log_current_time(); // Not use, just for testing
 }

@@ -15,7 +15,6 @@ void wifi_init_sta_ap(const char *ap_to_conn_ssid,
                       const char *ap_to_conn_password,
                       const char *esp_as_ap_ssid,
                       const char *esp_as_ap_password);
-void log_current_time();
 void sntp_initialize(void);
 
 #endif // WIFI_INIT_H
