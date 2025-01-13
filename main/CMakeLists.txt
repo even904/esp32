@@ -5,5 +5,7 @@ set(srcs "pretty_effect.c"
     )
 
 idf_component_register(SRCS ${srcs}
-                    INCLUDE_DIRS ".")
+                    INCLUDE_DIRS "."
+                    EMBED_TXTFILES
+                    amap_com_root_cert.pem)
                     # EMBED_FILES image.jpg)
