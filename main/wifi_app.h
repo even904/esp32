@@ -1,5 +1,5 @@
-#ifndef WIFI_INIT_H
-#define WIFI_INIT_H
+#ifndef WIFI_APP_H
+#define WIFI_APP_H
 
 #include "esp_event.h"
 #include "esp_log.h"
@@ -17,4 +17,6 @@ void wifi_init_sta_ap(const char *ap_to_conn_ssid,
                       const char *esp_as_ap_password);
 void sntp_initialize(void);
 
-#endif // WIFI_INIT_H
+extern EventGroupHandle_t s_wifi_event_group;
+
+#endif // WIFI_APP_H

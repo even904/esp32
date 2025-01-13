@@ -32,7 +32,7 @@
 #include "pretty_effect.h"
 
 #include "esp_http_client.h"
-#include "wifi_init.h"
+#include "wifi_app.h"
 
 // LCD configuration
 #define LCD_HOST SPI2_HOST

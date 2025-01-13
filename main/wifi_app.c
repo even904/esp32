@@ -1,4 +1,4 @@
-#include "wifi_init.h"
+#include "wifi_app.h"
 #include "esp_log.h"
 #include "esp_netif_types.h"
 #include "esp_sntp.h"
@@ -18,11 +18,15 @@
 // Event group bit definitions, expand if needed
 #define WIFI_IS_CONNECTED_BIT BIT0 // 1: connected, 0: disconnected
 #define IP_IS_OBTAINED_BIT BIT1    // 1: IP obtained, 0: IP not obtained
-#define SNTP_INITIALIZED_BIT BIT2   // 1: SNTP initialized, 0: SNTP not initialized
+#define SNTP_INITIALIZED_BIT                                                   \
+  BIT2 // 1: SNTP initialized, 0: SNTP not initialized
+#define WIFI_CONNECTED_SINCE_BOOT_BIT                                          \
+  BIT3 // 1: WiFi connected since boot, 0: WiFi not connected since boot
 
+#define STAION_IS_CONNECTED_BIT BIT10 // 1: Station joined, 0: Station leave
 
 static const char *TAG = "WiFi";
-static EventGroupHandle_t s_wifi_event_group;
+EventGroupHandle_t s_wifi_event_group;
 static int s_retry_num = 0;
 
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
@@ -38,14 +42,18 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
       ESP_LOGI(TAG, "retry to connect to the AP");
     } else {
       xEventGroupClearBits(s_wifi_event_group, WIFI_IS_CONNECTED_BIT);
+      xEventGroupClearBits(s_wifi_event_group, IP_IS_OBTAINED_BIT);
     }
-    ESP_LOGI(TAG, "connect to the AP fail");
+    ESP_LOGI(TAG, "connect to the AP fail,reason=%d",
+             ((wifi_event_sta_disconnected_t *)event_data)->reason);
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
     s_retry_num = 0;
     sntp_initialize(); // Initialize SNTP after getting IP
     xEventGroupSetBits(s_wifi_event_group, WIFI_IS_CONNECTED_BIT);
+    xEventGroupSetBits(s_wifi_event_group, IP_IS_OBTAINED_BIT);
+    xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_SINCE_BOOT_BIT);
   }
   // handle esp as AP events
   else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
@@ -53,12 +61,14 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         (wifi_event_ap_staconnected_t *)event_data;
     ESP_LOGI(TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac),
              event->aid);
+    xEventGroupSetBits(s_wifi_event_group, STAION_IS_CONNECTED_BIT);
   } else if (event_base == WIFI_EVENT &&
              event_id == WIFI_EVENT_AP_STADISCONNECTED) {
     wifi_event_ap_stadisconnected_t *event =
         (wifi_event_ap_stadisconnected_t *)event_data;
     ESP_LOGI(TAG, "station " MACSTR " leave, AID=%d, reason=%d",
              MAC2STR(event->mac), event->aid, event->reason);
+    xEventGroupClearBits(s_wifi_event_group, STAION_IS_CONNECTED_BIT);
   }
 }
 
@@ -95,7 +105,7 @@ void wifi_init_sta_ap(const char *ap_to_conn_ssid,
       WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL, NULL));
   ESP_ERROR_CHECK(esp_event_handler_instance_register(
       IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_event_handler, NULL, NULL));
-  
+
   // 3.5 Config start WiFi as AP and STA
   wifi_config_t wifi_config_sta = {
       .sta =

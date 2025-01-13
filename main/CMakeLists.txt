@@ -1,7 +1,7 @@
 set(srcs "pretty_effect.c"
     "spi_master_example_main.c"
     "decode_image.c"
-    "wifi_init.c"
+   "wifi_app.c"
     )
 
 idf_component_register(SRCS ${srcs}
