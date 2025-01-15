@@ -47,7 +47,7 @@ typedef enum
 
 typedef struct
 {
-    char    *raw_content;
+    char    raw_content[MAX_HTTP_OUTPUT_BUFFER];
     uint16_t raw_content_length;
 } raw_weather_info_t;
 

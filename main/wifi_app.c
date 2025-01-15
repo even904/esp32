@@ -343,7 +343,6 @@ esp_err_t client_get_weather(char *city_code, extensions_type extensions)
     }
     ESP_LOGI(TAG, "The request url is:%s", url_str);
 
-    raw_weather_info.raw_content    = (char *)malloc(MAX_HTTP_OUTPUT_BUFFER);
     esp_http_client_config_t config = {
         .url           = url_str,
         .cert_pem      = amap_com_root_cert_pem_start,  // Root cert for amap.com
