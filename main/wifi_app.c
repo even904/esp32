@@ -19,7 +19,7 @@
 
 #define ESP_MAXIMUM_RETRY 5  // Currently set to 5, HMI can change this value
 
-static const char *TAG = "WiFi";
+static const char *wifi_app_TAG = "WiFi";
 EventGroupHandle_t s_wifi_event_group;
 static int         s_retry_num = 0;
 
@@ -42,19 +42,19 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         {
             esp_wifi_connect();
             s_retry_num++;
-            ESP_LOGI(TAG, "retry to connect to the AP");
+            ESP_LOGI(wifi_app_TAG, "retry to connect to the AP");
         }
         else
         {
             xEventGroupClearBits(s_wifi_event_group, WIFI_IS_CONNECTED_BIT);
             xEventGroupClearBits(s_wifi_event_group, IP_IS_OBTAINED_BIT);
         }
-        ESP_LOGI(TAG, "connect to the AP fail,reason=%d", ((wifi_event_sta_disconnected_t *)event_data)->reason);
+        ESP_LOGI(wifi_app_TAG, "connect to the AP fail,reason=%d", ((wifi_event_sta_disconnected_t *)event_data)->reason);
     }
     else if(event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
-        ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+        ESP_LOGI(wifi_app_TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
         s_retry_num = 0;
         // 异步初始化SNTP，确保不会阻塞主任务
         xTaskCreatePinnedToCore(sntp_initialize_task, "sntp_init", 2048, NULL, 5, NULL, tskNO_AFFINITY);
@@ -72,7 +72,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         }
         else
         {
-            ESP_LOGE(TAG, "Failed to sync time via SNTP");
+            ESP_LOGE(wifi_app_TAG, "Failed to sync time via SNTP");
         }
         xEventGroupSetBits(s_wifi_event_group, WIFI_IS_CONNECTED_BIT);
         xEventGroupSetBits(s_wifi_event_group, IP_IS_OBTAINED_BIT);
@@ -82,13 +82,13 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
     else if(event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED)
     {
         wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
-        ESP_LOGI(TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
+        ESP_LOGI(wifi_app_TAG, "station " MACSTR " join, AID=%d", MAC2STR(event->mac), event->aid);
         xEventGroupSetBits(s_wifi_event_group, STAION_IS_CONNECTED_BIT);
     }
     else if(event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STADISCONNECTED)
     {
         wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
-        ESP_LOGI(TAG, "station " MACSTR " leave, AID=%d, reason=%d", MAC2STR(event->mac), event->aid, event->reason);
+        ESP_LOGI(wifi_app_TAG, "station " MACSTR " leave, AID=%d, reason=%d", MAC2STR(event->mac), event->aid, event->reason);
         xEventGroupClearBits(s_wifi_event_group, STAION_IS_CONNECTED_BIT);
     }
 }
@@ -160,7 +160,7 @@ void wifi_init_sta_ap(
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config_ap));
 
     ESP_LOGI(
-        TAG,
+        wifi_app_TAG,
         "wifi_init_sta_ap finished. esp_as_ap_ssid:%s esp_as_ap_password:%s "
         "AP_channel:%d",
         esp_as_ap_ssid,
@@ -175,7 +175,7 @@ static void time_sync_notification_cb(struct timeval *tv)
 {
     if(tv == NULL)
     {
-        ESP_LOGE(TAG, "Time synchronization failed.");
+        ESP_LOGE(wifi_app_TAG, "Time synchronization failed.");
     }
 
     // 将时间转换为本地时间
@@ -185,13 +185,13 @@ static void time_sync_notification_cb(struct timeval *tv)
     // 格式化输出时间
     char strftime_buf[64];
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    ESP_LOGI(TAG, "The current date/time is: %s", strftime_buf);
+    ESP_LOGI(wifi_app_TAG, "The current date/time is: %s", strftime_buf);
 }
 
 // Avoid redefining the function, change init to initialize
 void sntp_initialize(void)
 {
-    ESP_LOGI(TAG, "Initializing SNTP...");
+    ESP_LOGI(wifi_app_TAG, "Initializing SNTP...");
     esp_sntp_stop();
 
     // Set timezone to China Standard Time
@@ -215,19 +215,19 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     switch(evt->event_id)
     {
     case HTTP_EVENT_ERROR:
-        ESP_LOGW(TAG, "HTTP_EVENT_ERROR");
+        ESP_LOGW(wifi_app_TAG, "HTTP_EVENT_ERROR");
         break;
     case HTTP_EVENT_ON_CONNECTED:
-        ESP_LOGI(TAG, "HTTP_EVENT_ON_CONNECTED");
+        ESP_LOGI(wifi_app_TAG, "HTTP_EVENT_ON_CONNECTED");
         break;
     case HTTP_EVENT_HEADER_SENT:
-        ESP_LOGI(TAG, "HTTP_EVENT_HEADER_SENT");
+        ESP_LOGI(wifi_app_TAG, "HTTP_EVENT_HEADER_SENT");
         break;
     case HTTP_EVENT_ON_HEADER:
-        ESP_LOGI(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
+        ESP_LOGI(wifi_app_TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
         break;
     case HTTP_EVENT_ON_DATA:
-        ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+        ESP_LOGI(wifi_app_TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
         // Clean the buffer in case of a new request
         if(output_len == 0 && evt->user_data)
         {
@@ -264,7 +264,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
                     output_len    = 0;
                     if(output_buffer == NULL)
                     {
-                        ESP_LOGE(TAG, "Failed to allocate memory for output buffer");
+                        ESP_LOGE(wifi_app_TAG, "Failed to allocate memory for output buffer");
                         return ESP_FAIL;
                     }
                 }
@@ -279,25 +279,25 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 
         break;
     case HTTP_EVENT_ON_FINISH:
-        ESP_LOGI(TAG, "HTTP_EVENT_ON_FINISH");
+        ESP_LOGI(wifi_app_TAG, "HTTP_EVENT_ON_FINISH");
         if(output_buffer != NULL)
         {
             // Response is accumulated in output_buffer. Uncomment the below line to
             // print the accumulated response
-            // ESP_LOG_BUFFER_HEX(TAG, output_buffer, output_len);
+            // ESP_LOG_BUFFER_HEX(wifi_app_TAG, output_buffer, output_len);
             free(output_buffer);
             output_buffer = NULL;
         }
         output_len = 0;
         break;
     case HTTP_EVENT_DISCONNECTED:
-        ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
+        ESP_LOGI(wifi_app_TAG, "HTTP_EVENT_DISCONNECTED");
         int       mbedtls_err = 0;
         esp_err_t err         = esp_tls_get_and_clear_last_error((esp_tls_error_handle_t)evt->data, &mbedtls_err, NULL);
         if(err != 0)
         {
-            ESP_LOGI(TAG, "Last esp error code: 0x%x", err);
-            ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
+            ESP_LOGI(wifi_app_TAG, "Last esp error code: 0x%x", err);
+            ESP_LOGI(wifi_app_TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
         }
         if(output_buffer != NULL)
         {
@@ -307,7 +307,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
         output_len = 0;
         break;
     case HTTP_EVENT_REDIRECT:
-        ESP_LOGI(TAG, "HTTP_EVENT_REDIRECT");
+        ESP_LOGI(wifi_app_TAG, "HTTP_EVENT_REDIRECT");
         esp_http_client_set_header(evt->client, "From", "user@example.com");
         esp_http_client_set_header(evt->client, "Accept", "text/html");
         esp_http_client_set_redirection(evt->client);
@@ -339,9 +339,9 @@ esp_err_t client_get_weather(char *city_code, extensions_type extensions)
 
     if(len >= sizeof(url_str))
     {
-        ESP_LOGE(TAG, "URL too long, buffer overflow detected");
+        ESP_LOGE(wifi_app_TAG, "URL too long, buffer overflow detected");
     }
-    ESP_LOGI(TAG, "The request url is:%s", url_str);
+    ESP_LOGI(wifi_app_TAG, "The request url is:%s", url_str);
 
     esp_http_client_config_t config = {
         .url           = url_str,
@@ -358,7 +358,7 @@ esp_err_t client_get_weather(char *city_code, extensions_type extensions)
     {
         raw_weather_info.raw_content_length = (uint16_t)esp_http_client_get_content_length(client);
         ESP_LOGI(
-            TAG,
+            wifi_app_TAG,
             "HTTPS Status = %d, content_length = %d",
             esp_http_client_get_status_code(client),
             raw_weather_info.raw_content_length
@@ -367,7 +367,7 @@ esp_err_t client_get_weather(char *city_code, extensions_type extensions)
     }
     else
     {
-        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
+        ESP_LOGE(wifi_app_TAG, "Error perform http request %s", esp_err_to_name(err));
         e = ESP_FAIL;
     }
     esp_http_client_cleanup(client);
