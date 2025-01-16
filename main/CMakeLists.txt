@@ -1,5 +1,5 @@
 set(srcs
-    "spi_master_example_main.c"
+    "main.c"
     "decode_image.c"
    "wifi_app.c"
   "WeatherIcon.c"
