@@ -1,4 +1,9 @@
 #include "lv_custom_ui.h"
+#include "core/lv_obj.h"
+#include "core/lv_obj_pos.h"
+#include "misc/lv_area.h"
+#include "misc/lv_style_gen.h"
+#include "misc/lv_types.h"
 
 static const char *lv_custom_ui_TAG = "UI";
 
@@ -1013,6 +1018,7 @@ void create_loading_animation(lv_obj_t *obj)
 }
 
 static lv_obj_t *time_label = NULL;
+
 void create_time_display(lv_obj_t *container)
 {
     time_t    now;
@@ -1029,8 +1035,8 @@ void create_time_display(lv_obj_t *container)
     ESP_LOGI(lv_custom_ui_TAG, "The current date/time in Shanghai is: %s", strftime_buf);
 
     time_label = lv_label_create(container);
-    lv_label_set_text(time_label, strftime_buf);        // 设置文本内容
-    lv_obj_align(time_label, LV_ALIGN_TOP_MID, 0, 10);  // 将文本标签置顶并居中对齐
+    lv_label_set_text(time_label, strftime_buf);      // 设置文本内容
+    lv_obj_align(time_label, LV_ALIGN_CENTER, 0, 0);  // 将文本标签置顶并居中对齐
 }
 
 void update_time_display()
@@ -1071,15 +1077,15 @@ const lv_image_dsc_t rain = {
 
 void create_weather_info_display(lv_obj_t *obj)
 {
-    lv_obj_t *img        = lv_image_create(obj);
+    lv_obj_t *img = lv_image_create(obj);
     lv_image_set_src(img, &rain);
-    lv_obj_align(img, LV_ALIGN_BOTTOM_MID, 0, 0);
+    lv_obj_align(img, LV_ALIGN_RIGHT_MID, 0, 0);
     //
     lv_obj_t *label = lv_label_create(obj);
     lv_obj_set_style_text_font(label, &WeatherIcon, LV_PART_MAIN);
     lv_label_set_text(label, WEATHER_ICON_84_23);
     ESP_LOGI(lv_custom_ui_TAG, "Icon");
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, -20);
+    lv_obj_align(label, LV_ALIGN_LEFT_MID, 0, 0);
 }
 
 void update_weather_info_display()
@@ -1106,13 +1112,73 @@ void update_weather_info_display()
 
 void create_main_display(lv_disp_t *disp)
 {
+    static lv_style_t container_style;
+    lv_style_init(&container_style);
+    lv_style_set_layout(&container_style, LV_LAYOUT_FLEX);
+    lv_style_set_flex_flow(&container_style, LV_FLEX_FLOW_COLUMN);
+    lv_style_set_pad_all(&container_style, 0);  // 设置所有方向的内边距为0
+    lv_style_set_pad_row(&container_style, 0);  // 确保行之间的间距也为0
+    lv_style_set_pad_column(&container_style, 0);
+    lv_style_set_border_width(&container_style, 0);
+
     // 创建一个容器作为主界面
     lv_obj_t *main_container = lv_obj_create(lv_disp_get_scr_act(disp));
+    lv_obj_add_style(main_container, &container_style, 0);
     lv_obj_set_size(main_container, lv_disp_get_hor_res(NULL),
-                    lv_disp_get_ver_res(NULL));           // 设置容器大小为全屏
-    lv_obj_align(main_container, LV_ALIGN_CENTER, 0, 0);  // 将容器居中对齐
+                    lv_disp_get_ver_res(NULL));  // 设置容器大小为全屏
+    lv_obj_center(main_container);               // 将容器居中对齐
 
-    create_time_display(main_container);  // 创建一个时间显示
-    // create_loading_animation(main_container);
-    create_weather_info_display(main_container);
+    // lv_obj_set_style_margin_all(main_container, 0, 0);
+    // lv_obj_set_style_pad_all(main_container, 0, 0);  // 
+    /* 创建并初始化样式 */
+    static lv_style_t child_container_style;
+    lv_style_init(&child_container_style);
+    lv_style_set_border_width(&child_container_style, 0);  // Set broder width = 0
+    lv_style_set_pad_all(&child_container_style, 0);       // Set pad = 0 in all directions
+
+    create_upper_container(main_container,&child_container_style);
+    create_middle_container(main_container,&child_container_style);
+    create_bottom_container(main_container,&child_container_style);
+}
+
+/* -----------------------*/
+/*|                      |*/
+/*|                      |*/
+/*|    Upper Container   |*/
+/*|                      |*/
+/*|                      |*/
+/* -----------------------*/
+/*|                      |*/
+/*|                      |*/
+/*|    Middle Container  |*/
+/*|                      |*/
+/*|                      |*/
+/* -----------------------*/
+/*|                      |*/
+/*|                      |*/
+/*|    Bottom Container  |*/
+/*|                      |*/
+/* -----------------------*/
+void create_upper_container(lv_obj_t *obj, lv_style_t *style)
+{
+    lv_obj_t *container = lv_obj_create(obj);
+    lv_obj_set_size(container, LV_PCT(100), 100);
+    lv_obj_add_style(container, style, 0);
+    create_weather_info_display(container);
+}
+
+void create_middle_container(lv_obj_t *obj, lv_style_t *style)
+{
+    lv_obj_t *container = lv_obj_create(obj);
+    lv_obj_set_size(container, LV_PCT(100), 100);
+    lv_obj_add_style(container, style, 0);
+    create_time_display(container);
+}
+
+void create_bottom_container(lv_obj_t *obj, lv_style_t *style)
+{
+    lv_obj_t *container = lv_obj_create(obj);
+    lv_obj_set_size(container, LV_PCT(100), 80);
+    lv_obj_add_style(container, style, 0);
+    create_loading_animation(container);
 }

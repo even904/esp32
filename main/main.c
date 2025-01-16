@@ -99,7 +99,7 @@ void start_event_update_lv_task()
     xTaskCreate(
         event_update_lv_task,
         "event_update_lv_task",
-        4096,  // words
+        1024 * 4,  // words
         NULL,
         5,  // lower than lvgl handle task
         NULL
