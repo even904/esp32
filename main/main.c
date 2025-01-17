@@ -71,6 +71,7 @@ static void lv_timer_callback(lv_timer_t *timer)
 {
     // static uint64_t cnt = 0;
     update_time_display();
+    update_weather_info_display();
     // cnt++;
 }
 
@@ -85,7 +86,8 @@ void event_update_lv_task(void *pvParameters)
 
     for(;;)
     {
-        update_weather_info_display();
+        get_parsed_weather_info();
+        // update_weather_info_display();
         // #if ENABLE_MEMORY_CHECK
         //         check_heap_memory("Update weather info task");
         // #endif

@@ -1,43 +1,11 @@
 #include "parse_json.h"
 #include "esp_log.h"
+#include "lwipopts.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 // static const char *parse_json_TAG = "PARSE_JSON";
-
-typedef enum
-{
-    s,
-} weather_icon_t;
-
-typedef enum
-{
-    w,
-} wind_direction_icon_t;
-
-typedef struct
-{
-    /******* status info ******** */
-    bool valid_flag;  // false: deinitialized, unkown weather or return status = 0,infocode != 10000 ;true: valid
-    int  count;       // total number of  report results 0:deinitialized
-    char info[10];
-    char infocode[5];
-    /****** weather info, one character occupies two chars ****** */
-    char province[10];
-    char city[10];
-    char adcode[10];
-    char weather[10];
-    char temperature[10];
-    char winddirection[10];
-    char windpower[5];
-    char humidity[6];
-    char reporttime[20];
-    char temperature_float[6];
-    char humidity_float[6];
-    /******** signified data ******** */
-    weather_icon_t        weather_icon;
-    wind_direction_icon_t wind_direction_icon;
-} weather_info_t;
 
 // const char *json_str
 //     = "{\"status\":\"1\",\"count\":\"1\",\"info\":\"OK\",\"infocode\":\"10000\",\"lives\":[{\"province\":\"北京\","
@@ -47,9 +15,26 @@ typedef struct
 
 weather_info_t parsed_weather_info = {.valid_flag = false};
 
-void parse_json(const char *json_data)
+void parse_json_update_weather(const char *json_data)
 {
+    if(parsed_weather_info.infocode != NULL)
+    {
+        free(parsed_weather_info.info);
+        free(parsed_weather_info.infocode);
+        free(parsed_weather_info.province);
+        free(parsed_weather_info.city);
+        free(parsed_weather_info.adcode);
+        free(parsed_weather_info.weather);
+        free(parsed_weather_info.temperature);
+        free(parsed_weather_info.winddirection);
+        free(parsed_weather_info.windpower);
+        free(parsed_weather_info.humidity);
+        free(parsed_weather_info.reporttime);
+        free(parsed_weather_info.temperature_float);
+        free(parsed_weather_info.humidity_float);
+    }
     memset(&parsed_weather_info, 0, sizeof(weather_info_t));
+    parsed_weather_info.valid_flag = false;
     // 解析 JSON 字符串
     cJSON *root = cJSON_Parse(json_data);
     if(root == NULL)
@@ -62,23 +47,25 @@ void parse_json(const char *json_data)
         return;
     }
 
-    // 获取状态信息
     cJSON *status = cJSON_GetObjectItemCaseSensitive(root, "status");
     if(cJSON_IsString(status) && (status->valuestring != NULL))
     {
-        // printf("Status: %s\n", status->valuestring);
     }
 
     cJSON *info = cJSON_GetObjectItemCaseSensitive(root, "info");
     if(cJSON_IsString(info) && (info->valuestring != NULL))
     {
-        // printf("Info: %s\n", info->valuestring);
+        parsed_weather_info.info = malloc(strlen(info->valuestring) + 1);
+        memcpy(parsed_weather_info.info, info->valuestring, strlen(info->valuestring));
+        parsed_weather_info.info[strlen(info->valuestring)] = '\0';
     }
 
     cJSON *infocode = cJSON_GetObjectItemCaseSensitive(root, "infocode");
     if(cJSON_IsString(infocode) && (infocode->valuestring != NULL))
     {
-        // printf("Infocode: %s\n", infocode->valuestring);
+        parsed_weather_info.infocode = malloc(strlen(infocode->valuestring) + 1);
+        memcpy(parsed_weather_info.infocode, infocode->valuestring, strlen(infocode->valuestring));
+        parsed_weather_info.info[strlen(infocode->valuestring)] = '\0';
     }
 
     if((strcmp(status->valuestring, "1") == 0) && strcmp(status->valuestring, "10000"))
@@ -105,29 +92,89 @@ void parse_json(const char *json_data)
                    && cJSON_IsString(temperature) && cJSON_IsString(winddirection) && cJSON_IsString(windpower)
                    && cJSON_IsString(humidity) && cJSON_IsString(reporttime))
                 {
-                    // printf("Live Weather Data:\n");
-                    // printf("Province: %s\n", province->valuestring);
-                    // printf("City: %s\n", city->valuestring);
-                    // printf("Adcode: %s\n", adcode->valuestring);
-                    // printf("Weather: %s\n", weather->valuestring);
-                    // printf("Temperature: %s°C\n", temperature->valuestring);
-                    // printf("Wind Direction: %s\n", winddirection->valuestring);
-                    // printf("Wind Power: %s\n", windpower->valuestring);
-                    // printf("Humidity: %s%%\n", humidity->valuestring);
-                    // printf("Report Time: %s\n", reporttime->valuestring);
-                    // printf("\n");
-                    strcpy(parsed_weather_info.province, province->valuestring);
-                    strcpy(parsed_weather_info.city, city->valuestring);
-                    strcpy(parsed_weather_info.adcode, adcode->valuestring);
-                    strcpy(parsed_weather_info.weather, weather->valuestring);
-                    strcpy(parsed_weather_info.temperature, temperature->valuestring);
-                    strcpy(parsed_weather_info.winddirection, winddirection->valuestring);
-                    strcpy(parsed_weather_info.windpower, windpower->valuestring);
-                    strcpy(parsed_weather_info.humidity, humidity->valuestring);
-                    strcpy(parsed_weather_info.reporttime, reporttime->valuestring);
+                    // Province
+                    parsed_weather_info.province = malloc(strlen(province->valuestring) + 1);
+                    if(parsed_weather_info.province != NULL)
+                    {
+                        memcpy(parsed_weather_info.province, province->valuestring, strlen(province->valuestring));
+                        parsed_weather_info.province[strlen(province->valuestring)] = '\0';
+                    }
+
+                    // City
+                    parsed_weather_info.city = malloc(strlen(city->valuestring) + 1);
+                    if(parsed_weather_info.city != NULL)
+                    {
+                        memcpy(parsed_weather_info.city, city->valuestring, strlen(city->valuestring));
+                        parsed_weather_info.city[strlen(city->valuestring)] = '\0';
+                    }
+
+                    // Adcode
+                    parsed_weather_info.adcode = malloc(strlen(adcode->valuestring) + 1);
+                    if(parsed_weather_info.adcode != NULL)
+                    {
+                        memcpy(parsed_weather_info.adcode, adcode->valuestring, strlen(adcode->valuestring));
+                        parsed_weather_info.adcode[strlen(adcode->valuestring)] = '\0';
+                    }
+
+                    // Weather
+                    parsed_weather_info.weather = malloc(strlen(weather->valuestring) + 1);
+                    if(parsed_weather_info.weather != NULL)
+                    {
+                        memcpy(parsed_weather_info.weather, weather->valuestring, strlen(weather->valuestring));
+                        parsed_weather_info.weather[strlen(weather->valuestring)] = '\0';
+                    }
+
+                    // Temperature
+                    parsed_weather_info.temperature = malloc(strlen(temperature->valuestring) + 1);
+                    if(parsed_weather_info.temperature != NULL)
+                    {
+                        memcpy(
+                            parsed_weather_info.temperature, temperature->valuestring, strlen(temperature->valuestring)
+                        );
+                        parsed_weather_info.temperature[strlen(temperature->valuestring)] = '\0';
+                    }
+
+                    // Wind Direction
+                    parsed_weather_info.winddirection = malloc(strlen(winddirection->valuestring) + 1);
+                    if(parsed_weather_info.winddirection != NULL)
+                    {
+                        memcpy(
+                            parsed_weather_info.winddirection,
+                            winddirection->valuestring,
+                            strlen(winddirection->valuestring)
+                        );
+                        parsed_weather_info.winddirection[strlen(winddirection->valuestring)] = '\0';
+                    }
+
+                    // Wind Power
+                    parsed_weather_info.windpower = malloc(strlen(windpower->valuestring) + 1);
+                    if(parsed_weather_info.windpower != NULL)
+                    {
+                        memcpy(parsed_weather_info.windpower, windpower->valuestring, strlen(windpower->valuestring));
+                        parsed_weather_info.windpower[strlen(windpower->valuestring)] = '\0';
+                    }
+
+                    // Humidity
+                    parsed_weather_info.humidity = malloc(strlen(humidity->valuestring) + 1);
+                    if(parsed_weather_info.humidity != NULL)
+                    {
+                        memcpy(parsed_weather_info.humidity, humidity->valuestring, strlen(humidity->valuestring));
+                        parsed_weather_info.humidity[strlen(humidity->valuestring)] = '\0';
+                    }
+
+                    // Report Time
+                    parsed_weather_info.reporttime = malloc(strlen(reporttime->valuestring) + 1);
+                    if(parsed_weather_info.reporttime != NULL)
+                    {
+                        memcpy(
+                            parsed_weather_info.reporttime, reporttime->valuestring, strlen(reporttime->valuestring)
+                        );
+                        parsed_weather_info.reporttime[strlen(reporttime->valuestring)] = '\0';
+                    }
+
                     parsed_weather_info.valid_flag = true;
+
                     printf("Parsed_weather_info data\n");
-                    // ESP_LOGI(parse_json_TAG,"Parsed_weather_info data\n");
                     printf("Province: %s\n", parsed_weather_info.province);
                     printf("City: %s\n", parsed_weather_info.city);
                     printf("Adcode: %s\n", parsed_weather_info.adcode);
@@ -144,4 +191,3 @@ void parse_json(const char *json_data)
     // 清理
     cJSON_Delete(root);
 }
-
