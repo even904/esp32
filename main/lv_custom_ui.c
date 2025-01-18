@@ -1064,11 +1064,12 @@ void create_time_display(lv_obj_t *left_container, lv_obj_t *right_container)
     }
     // Right
     tdc.sec_arc = lv_arc_create(right_container);
+    static lv_style_t arc_style;
     if(tdc.sec_arc != NULL)
     {
-        lv_style_t arc_style;
         lv_style_init(&arc_style);
         lv_style_set_arc_width(&arc_style, 4);
+        lv_style_set_width(&arc_style, 4);
         lv_obj_add_style(tdc.sec_arc, &arc_style, LV_PART_MAIN);
         lv_obj_set_size(tdc.sec_arc, 40, 40);
         lv_obj_align(tdc.sec_arc, LV_ALIGN_CENTER, 0, -10);
@@ -1237,7 +1238,11 @@ void update_weather_info_display()
     ESP_LOGI(lv_custom_ui_TAG, "Updating weather info display...");
     if(widc.weather_icon_label != NULL)
     {
-        lv_label_set_text(widc.weather_icon_label, WI84_ee98b4);
+        lv_label_set_text(widc.weather_icon_label, get_weather_icon(parsed_weather_info.weather));
+    }
+    if(widc.weather_label != NULL)
+    {
+        lv_label_set_text(widc.weather_label, parsed_weather_info.weather);
     }
     if(widc.province_label != NULL && parsed_weather_info.province != NULL)  // need deeper thinking
     {
@@ -1461,6 +1466,10 @@ char *get_weather_icon(char *weather)
 {
     // ❗Day and Night need division
     int find_weather = -1;
+    if(weather == NULL)
+    {
+        return WI84_ee9bb2;  // not any
+    }
     for(int i = 0; i < 68; i++)
     {
         if(strcmp(weather, weatherPhenomena[i]) == 0)
@@ -1612,5 +1621,4 @@ char *get_weather_icon(char *weather)
     default:
         return WI84_ee9bb2;  // 67 is UnknownWeather
     }
-    return WI84_ee9bb2;  // not any
 }

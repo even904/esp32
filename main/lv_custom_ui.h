@@ -20,5 +20,6 @@ void update_weather_info_display();
 void create_upper_container(lv_obj_t *obj,lv_style_t *style);
 void create_middle_container(lv_obj_t *obj,lv_style_t *style);
 void create_bottom_container(lv_obj_t *obj,lv_style_t *style);
+char *get_weather_icon(char *weather);
 
 #endif
