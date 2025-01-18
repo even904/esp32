@@ -1173,12 +1173,13 @@ void create_weather_info_display_upper(lv_obj_t *left_container, lv_obj_t *right
     //
     widc.weather_icon_label = lv_label_create(left_container);
     lv_obj_set_style_text_font(widc.weather_icon_label, &WeatherIcon, LV_PART_MAIN);
-    lv_label_set_text(widc.weather_icon_label, WEATHER_ICON_84_25);
+    lv_label_set_text(widc.weather_icon_label, WI84_ee9bb2);
     ESP_LOGI(lv_custom_ui_TAG, "Icon");
     lv_obj_align(widc.weather_icon_label, LV_ALIGN_CENTER, 0, 0);
 
     widc.weather_label = lv_label_create(right_container);
-    lv_obj_set_style_text_font(widc.weather_label, &lv_font_simsun_16_cjk, LV_PART_MAIN);
+    lv_obj_set_style_text_font(widc.weather_label, &WenQuanWeiMiHei_48, LV_PART_MAIN);
+    lv_label_set_long_mode(widc.weather_label, LV_LABEL_LONG_WRAP);
     lv_label_set_text(widc.weather_label, "未知");
 }
 
@@ -1186,12 +1187,12 @@ void create_weather_info_display_bottom(lv_obj_t *left_container, lv_obj_t *righ
 {
     // Left
     widc.province_label = lv_label_create(left_container);
-    lv_obj_set_style_text_font(widc.province_label, &lv_font_simsun_16_cjk, LV_PART_MAIN);
+    lv_obj_set_style_text_font(widc.province_label, &WenQuanWeiMiHei_48, LV_PART_MAIN);
     lv_label_set_text(widc.province_label, "测试：北京");
     lv_obj_align(widc.province_label, LV_ALIGN_TOP_MID, 0, 0);
 
     widc.city_label = lv_label_create(left_container);
-    lv_obj_set_style_text_font(widc.city_label, &lv_font_simsun_16_cjk, LV_PART_MAIN);
+    lv_obj_set_style_text_font(widc.city_label, &WenQuanWeiMiHei_48, LV_PART_MAIN);
     lv_label_set_text(widc.city_label, "测试：东城区");
     lv_obj_align(widc.city_label, LV_ALIGN_BOTTOM_MID, 0, 0);
 
@@ -1236,7 +1237,7 @@ void update_weather_info_display()
     ESP_LOGI(lv_custom_ui_TAG, "Updating weather info display...");
     if(widc.weather_icon_label != NULL)
     {
-        lv_label_set_text(widc.weather_icon_label, WEATHER_ICON_84_24);
+        lv_label_set_text(widc.weather_icon_label, WI84_ee98b4);
     }
     if(widc.province_label != NULL && parsed_weather_info.province != NULL)  // need deeper thinking
     {
@@ -1383,4 +1384,233 @@ void create_bottom_container(lv_obj_t *obj, lv_style_t *style)
     lv_obj_set_align(right_container, LV_ALIGN_RIGHT_MID);
 
     create_weather_info_display_bottom(left_container, right_container);
+}
+
+const char *weatherPhenomena[] = {
+    "晴",                // [0]Sunny
+    "少云",              // [1]Cloudy
+    "晴间多云",          // [2]
+    "多云",              // [3]
+    "阴",                // [4]Overcast
+    "有风",              // [5]Breezee
+    "平静",              // [6]
+    "微风",              // [7]
+    "和风",              // [8]
+    "清风",              // [9]
+    "强风/劲风",         // [10]StrongWind
+    "疾风",              // [11]
+    "大风",              // [12]
+    "烈风",              // [13]
+    "风暴",              // [14]Storm
+    "狂爆风",            // [15]
+    "飓风",              // [16]
+    "热带风暴",          // [17]Haze
+    "霾",                // [18]
+    "中度霾",            // [19]
+    "重度霾",            // [20]
+    "严重霾",            // [21]
+    "阵雨",              // [22]Shower
+    "雷阵雨",            // [23]Thundershower
+    "雷阵雨并伴有冰雹",  // [24]
+    "小雨",              // [25]LightRain
+    "中雨",              // [26]MiddleRain
+    "大雨",              // [27]HeavyRain
+    "暴雨",              // [28]HardRain
+    "大暴雨",            // [29]
+    "特大暴雨",          // [30]
+    "强阵雨",            // [31]StrongThunderShower
+    "强雷阵雨",          // [32]
+    "极端降雨",          // [33]
+    "毛毛雨/细雨",       // [34]=LightRain
+    "雨",                // [35]=LightRain
+    "小雨-中雨",         // [36]=MiddleRain
+    "中雨-大雨",         // [37]=HeavyRain
+    "大雨-暴雨",         // [38]=HardRain
+    "暴雨-大暴雨",       // [39]=
+    "大暴雨-特大暴雨",   // [40]=
+    "雨雪天气",          // [41]Snowy
+    "雨夹雪",            // [42]RainAndSnow
+    "阵雨夹雪",          // [43]
+    "冻雨",              // [44]
+    "雪",                // [45]Snow
+    "阵雪",              // [46]
+    "小雪",              // [47]LightSnow
+    "中雪",              // [48]MiddleSnow
+    "大雪",              // [49]HeavySnow
+    "暴雪",              // [50]HardSnow
+    "小雪-中雪",         // [51]=MiddleSnow
+    "中雪-大雪",         // [52]=HeavySnow
+    "大雪-暴雪",         // [53]=HardSnow
+    "浮尘",              // [54]Dust
+    "扬沙",              // [55]
+    "沙尘暴",            // [56]DustStorm
+    "强沙尘暴",          // [57]
+    "龙卷风",            // [58]Tornado
+    "雾",                // [59]Fog
+    "浓雾",              // [60]HeavyFog
+    "强浓雾",            // [61]
+    "轻雾",              // [62]
+    "大雾",              // [63]
+    "特强浓雾",          // [64]
+    "热",                // [65]Hot
+    "冷",                // [66]Cold
+    "未知"               // [67]UnknownWeather
+};
+
+char *get_weather_icon(char *weather)
+{
+    // ❗Day and Night need division
+    int find_weather = -1;
+    for(int i = 0; i < 68; i++)
+    {
+        if(strcmp(weather, weatherPhenomena[i]) == 0)
+        {
+            find_weather = i;
+        }
+    }
+    switch(find_weather)
+    {
+    case 0:
+        return WI84_ee99a2;
+        break;  // Sunny
+
+    case 1:
+    case 2:
+    case 3:
+        return WI84_ee9d84;
+        break;  // DayCloudy
+
+    case 4:
+        return WI84_ee9d99;
+        break;  // Overcast
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+        return WI84_ee9882;
+        break;  // Breezee
+    case 10:
+    case 11:
+    case 12:
+    case 13:
+        return WI84_ee9887;
+        break;  // StrongWind
+    case 14:
+    case 15:
+    case 16:
+        return WI84_ee9b91;
+        break;  // Storm
+    case 17:
+    case 18:
+    case 19:
+    case 20:
+    case 21:
+        return WI84_ee98aa;
+        break;  // Haze
+    case 22:
+        return WI84_ee9bb7;
+        break;  // Shower
+    case 23:
+    case 24:
+        return WI84_ee989d;
+        break;  // ThunderShower
+    case 25:
+        return WI84_ee9898;
+        break;  // LightRain
+    case 26:
+        return WI84_ee989a;
+        break;  // MiddleRain
+    case 27:
+        return WI84_ee9899;
+        break;  // HeavyRain
+    case 28:
+    case 29:
+    case 30:
+        return WI84_ee9892;
+        break;  // HardRain
+    case 31:
+    case 32:
+    case 33:
+        return WI84_ee9ca2;
+        break;  // StrongThunderShower
+    case 34:
+    case 35:
+        return WI84_ee9898;
+        break;  // LightRain
+    case 36:
+        return WI84_ee989a;
+        break;  // MiddleRain
+    case 37:
+        return WI84_ee9899;
+        break;  // HeavyRain
+    case 38:
+    case 39:
+    case 40:
+        return WI84_ee9892;
+        break;  // HardRain
+    case 41:
+        return WI84_ee9990;
+        break;  // Snowy
+    case 42:
+    case 43:
+    case 44:
+        return WI84_ee9893;
+        break;  // RainAndSnow
+    case 45:
+    case 46:
+        return WI84_ee9893;
+        break;  // Snow
+    case 47:
+        return WI84_ee98b6;
+        break;  // LightSnow
+    case 48:
+        return WI84_ee98b8;
+        break;  // MiddleSnow
+    case 49:
+        return WI84_ee98bc;
+        break;  // HeavySnow
+    case 50:
+        return WI84_ee98b9;
+        break;  // HardSnow
+    case 51:
+        return WI84_ee98b8;
+        break;  // MiddleSnow
+    case 52:
+        return WI84_ee98bc;
+        break;  // HeavySnow
+    case 53:
+        return WI84_ee98b9;
+        break;  // HardSnow
+    case 54:
+    case 55:
+        return WI84_ee98a8;
+        break;  // Dust
+    case 56:
+    case 57:
+        return WI84_ee98b4;
+        break;  // DustStorm
+    case 58:
+        return WI84_ee9f96;
+        break;  // Tornado
+    case 59:
+        return WI84_ee9880;
+        break;  // Fog
+    case 60:
+    case 61:
+    case 62:
+    case 63:
+    case 64:
+        return WI84_ee9891;
+        break;  // HeavyFog
+    case 65:
+        return WI84_ee9881;
+        break;  // Hot
+    case 66:
+        return WI84_eea38e;
+        break;  // Cold
+    default:
+        return WI84_ee9bb2;  // 67 is UnknownWeather
+    }
+    return WI84_ee9bb2;  // not any
 }
