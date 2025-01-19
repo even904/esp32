@@ -64,7 +64,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         if(gettimeofday(NULL, NULL) != -1)
         {
             // 发起HTTPS请求
-            esp_err_t err = client_get_weather("110101", base);
+            esp_err_t err = client_get_weather("330100", base);
             if(err == ESP_OK)
             {
                 xEventGroupSetBits(s_wifi_event_group, HTTP_GET_WEATHER_INFO_BIT);

@@ -22,6 +22,7 @@
 
 #define STAION_IS_CONNECTED_BIT   BIT10  // 1: Station joined, 0: Station leave
 #define HTTP_GET_WEATHER_INFO_BIT BIT11  // 1: Got weather info, 0: No weather info got
+// #define UPDATE_WEATHER_INFO_REQUEST_BIT BIT12 // 1: Need to update, 0: No request
 
 /******* WiFi Init and SNTP Sync ******* */
 void wifi_init_sta_ap(

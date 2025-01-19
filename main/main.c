@@ -22,15 +22,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "lcd_lv_init.h"
 #include "esp_log.h"
+#include "lcd_lv_init.h"
 
 #include "esp_http_client.h"
+#include "lv_custom_ui.h"
+#include "parse_json.h"
 #include "widgets/image/lv_image.h"
 #include "widgets/label/lv_label.h"
 #include "wifi_app.h"
-#include "lv_custom_ui.h"
-#include "parse_json.h"
 
 // WIFI configuration
 #define AP_TO_CONN_SSID "Even"
@@ -64,15 +64,23 @@ void check_heap_memory(const char *TAG)
     // heap_caps_dump_all();
 }
 
-
 static lv_timer_t *lv_timer_handle = NULL;
 
 static void lv_timer_callback(lv_timer_t *timer)
 {
-    // static uint64_t cnt = 0;
+    static uint64_t cnt = 0;
     update_time_display();
     update_weather_info_display();
-    // cnt++;
+    cnt++;
+    if(cnt == 1200)
+    {
+        esp_err_t err = client_get_weather("330100", base);
+        if(err == ESP_OK)
+        {
+            xEventGroupSetBits(s_wifi_event_group, HTTP_GET_WEATHER_INFO_BIT);
+        }
+        cnt = 0;
+    }
 }
 
 void start_time_update_lv_timer()
