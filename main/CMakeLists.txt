@@ -3,6 +3,7 @@ set(srcs
     "decode_image.c"
     "wifi_app.c"
     "fonts/WeatherIcon4b.c"
+    "fonts/MoreIcon4b.c"
     "fonts/WenQuanWeiMiHei_12.c"
     "fonts/WenQuanWeiMiHei_18.c"
     "fonts/WenQuanWeiMiHei_24.c"
@@ -11,6 +12,7 @@ set(srcs
     "lv_custom_ui.c"
     "lcd_lv_init.c"
     "parse_json.c"
+    "assets/kw_bg.c"
     )
 
 idf_component_register(SRCS ${srcs}

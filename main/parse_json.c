@@ -1,6 +1,7 @@
 #include "parse_json.h"
 #include "esp_log.h"
 #include "lwipopts.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -125,13 +126,16 @@ void parse_json_update_weather(const char *json_data)
                     }
 
                     // Temperature
-                    parsed_weather_info.temperature = malloc(strlen(temperature->valuestring) + 1);
+                    parsed_weather_info.temperature
+                        = malloc(strlen(temperature->valuestring) + sizeof("°") + sizeof("C") + 1);  // ℃ not implement in font
                     if(parsed_weather_info.temperature != NULL)
                     {
-                        memcpy(
-                            parsed_weather_info.temperature, temperature->valuestring, strlen(temperature->valuestring)
+                        snprintf(
+                            parsed_weather_info.temperature,
+                            strlen(temperature->valuestring) + sizeof("°") + sizeof("C") + 1,
+                            "%s°C",
+                            temperature->valuestring
                         );
-                        parsed_weather_info.temperature[strlen(temperature->valuestring)] = '\0';
                     }
 
                     // Wind Direction
