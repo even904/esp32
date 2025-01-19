@@ -2,6 +2,7 @@
 #include "core/lv_obj.h"
 #include "core/lv_obj_pos.h"
 #include "custom_font.h"
+#include "custom_image.h"
 #include "font/lv_font.h"
 #include "misc/lv_anim.h"
 #include "misc/lv_area.h"
@@ -14,7 +15,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "custom_image.h"
+
 
 static const char *lv_custom_ui_TAG = "UI";
 
@@ -1215,8 +1216,10 @@ void create_weather_info_display_upper(lv_obj_t *left_container, lv_obj_t *right
     lv_obj_align(widc.weather_icon_label, LV_ALIGN_CENTER, 0, 0);
     // Right
     widc.weather_label = lv_label_create(right_container);
-    lv_obj_set_style_text_font(widc.weather_label, &WenQuanWeiMiHei_36, LV_PART_MAIN);
+    lv_obj_set_style_text_font(widc.weather_label, &WenQuanWeiMiHei_24, LV_PART_MAIN);
+    lv_obj_set_width(widc.weather_label, 50);
     lv_label_set_long_mode(widc.weather_label, LV_LABEL_LONG_WRAP);
+    lv_obj_set_height(widc.weather_label, LV_SIZE_CONTENT);
     lv_label_set_text(widc.weather_label, "未知");
     lv_obj_align(widc.weather_label, LV_ALIGN_LEFT_MID, 7, 0);
 
@@ -1387,7 +1390,7 @@ void create_main_display(lv_disp_t *disp)
     lv_style_set_pad_column(&container_style, 0);
     lv_style_set_border_width(&container_style, 0);
     lv_style_set_bg_img_src(&container_style, &kw_bg);
-                                                           // 
+    //
     // 创建一个容器作为主界面
     lv_obj_t *main_container = lv_obj_create(lv_disp_get_scr_act(disp));
     lv_obj_add_style(main_container, &container_style, 0);
@@ -1398,10 +1401,10 @@ void create_main_display(lv_disp_t *disp)
     /* 创建并初始化样式 */
     static lv_style_t child_container_style;
     lv_style_init(&child_container_style);
-    lv_style_set_border_width(&child_container_style, 0);  // Set broder width = 0
-    lv_style_set_pad_all(&child_container_style, 0);       // Set pad = 0 in all directions
-    lv_style_set_radius(&child_container_style, 0);        // No radius
-    lv_style_set_bg_opa(&child_container_style, LV_OPA_30); // Transparent
+    lv_style_set_border_width(&child_container_style, 0);    // Set broder width = 0
+    lv_style_set_pad_all(&child_container_style, 0);         // Set pad = 0 in all directions
+    lv_style_set_radius(&child_container_style, 0);          // No radius
+    lv_style_set_bg_opa(&child_container_style, LV_OPA_50);  // Transparent
 
     create_upper_container(main_container, &child_container_style);
     create_middle_container(main_container, &child_container_style);
@@ -1488,8 +1491,7 @@ void create_bottom_container(lv_obj_t *obj, lv_style_t *style)
     lv_style_set_pad_row(&right_container_style, 0);  // 确保行之间的间距也为0
     lv_style_set_pad_column(&right_container_style, 0);
     lv_style_set_border_width(&right_container_style, 0);
-    lv_style_set_bg_opa(&right_container_style, LV_OPA_30); // Transparent
-
+    lv_style_set_bg_opa(&right_container_style, LV_OPA_50);  // Transparent
 
     lv_obj_t *middle_container = lv_obj_create(container);
     lv_obj_set_size(middle_container, 20, LV_PCT(100));
@@ -1553,7 +1555,7 @@ const char *weatherPhenomena[] = {
     "阵雨夹雪",          // [43]
     "冻雨",              // [44]
     "雪",                // [45]Snow
-    "阵雪",              // [46]
+    "阵雪",              // [46]DaySnow/NightSnow
     "小雪",              // [47]LightSnow
     "中雪",              // [48]MiddleSnow
     "大雪",              // [49]HeavySnow
@@ -1580,7 +1582,19 @@ const char *weatherPhenomena[] = {
 char *get_weather_icon(char *weather)
 {
     // ❗Day and Night need division
-    int find_weather = -1;
+    int  find_weather = -1;
+    bool is_day       = false;  // 1: day_time 0:night_time
+
+    time_t    now;
+    struct tm timeinfo;
+    time(&now);
+    setenv("TZ", "CST-8", 1);
+    tzset();
+    localtime_r(&now, &timeinfo);
+    if(timeinfo.tm_hour >= 5 && timeinfo.tm_hour <= 18)
+    {
+        is_day = true;
+    }
     if(weather == NULL)
     {
         return WI84_ee9bb2;  // not any
@@ -1592,16 +1606,17 @@ char *get_weather_icon(char *weather)
             find_weather = i;
         }
     }
+
     switch(find_weather)
     {
     case 0:
-        return WI84_ee99a2;
+        return (is_day) ? WI84_ee99a2 : WI84_ee9e86;
         break;  // Sunny
 
     case 1:
     case 2:
     case 3:
-        return WI84_ee9d84;
+        return (is_day) ? WI84_ee9d84 : WI84_ee9b93;
         break;  // DayCloudy
 
     case 4:
@@ -1682,9 +1697,11 @@ char *get_weather_icon(char *weather)
         return WI84_ee9893;
         break;  // RainAndSnow
     case 45:
-    case 46:
         return WI84_ee9893;
         break;  // Snow
+    case 46:
+        return (is_day) ? WI84_ee9894 : WI84_ee9895;
+        break;
     case 47:
         return WI84_ee98b6;
         break;  // LightSnow
