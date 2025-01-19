@@ -1,6 +1,7 @@
 #include "lv_custom_ui.h"
 #include "core/lv_obj.h"
 #include "core/lv_obj_pos.h"
+#include "custom_font.h"
 #include "font/lv_font.h"
 #include "misc/lv_anim.h"
 #include "misc/lv_area.h"
@@ -1059,7 +1060,7 @@ void create_time_display(lv_obj_t *left_container, lv_obj_t *right_container)
     if(tdc.h_m_label != NULL)
     {
         lv_label_set_text(tdc.h_m_label, h_m);
-        lv_obj_set_style_text_font(tdc.h_m_label, &lv_font_montserrat_48, LV_PART_MAIN);
+        lv_obj_set_style_text_font(tdc.h_m_label, &WenQuanWeiMiHei_48, LV_PART_MAIN);
         lv_obj_align(tdc.h_m_label, LV_ALIGN_CENTER, 0, 0);
     }
     // Right
@@ -1072,7 +1073,7 @@ void create_time_display(lv_obj_t *left_container, lv_obj_t *right_container)
         lv_style_set_width(&arc_style, 4);
         lv_obj_add_style(tdc.sec_arc, &arc_style, LV_PART_MAIN);
         lv_obj_set_size(tdc.sec_arc, 40, 40);
-        lv_obj_align(tdc.sec_arc, LV_ALIGN_CENTER, 0, -10);
+        lv_obj_align(tdc.sec_arc, LV_ALIGN_CENTER, 0, 0);
         lv_arc_set_value(tdc.sec_arc, timeinfo.tm_sec);
         lv_arc_set_mode(tdc.sec_arc, LV_ARC_MODE_NORMAL);  // Circle
         lv_arc_set_rotation(tdc.sec_arc, 180);
@@ -1086,13 +1087,14 @@ void create_time_display(lv_obj_t *left_container, lv_obj_t *right_container)
     if(tdc.m_d_wd_label != NULL)
     {
         lv_label_set_text(tdc.m_d_wd_label, m_d_wd);
+        lv_obj_set_style_text_font(tdc.m_d_wd_label, &WenQuanWeiMiHei_18, LV_PART_MAIN);
         lv_obj_align(tdc.m_d_wd_label, LV_ALIGN_TOP_MID, 0, 0);
     }
     tdc.year_label = lv_label_create(right_container);
     if(tdc.year_label != NULL)
     {
         lv_label_set_text(tdc.year_label, year);
-        lv_obj_set_style_text_font(tdc.year_label, &lv_font_montserrat_36, LV_PART_MAIN);
+        lv_obj_set_style_text_font(tdc.year_label, &WenQuanWeiMiHei_24, LV_PART_MAIN);
         lv_obj_align(tdc.year_label, LV_ALIGN_BOTTOM_MID, 0, 0);
     }
 }
@@ -1179,7 +1181,7 @@ void create_weather_info_display_upper(lv_obj_t *left_container, lv_obj_t *right
     lv_obj_align(widc.weather_icon_label, LV_ALIGN_CENTER, 0, 0);
 
     widc.weather_label = lv_label_create(right_container);
-    lv_obj_set_style_text_font(widc.weather_label, &WenQuanWeiMiHei_48, LV_PART_MAIN);
+    lv_obj_set_style_text_font(widc.weather_label, &WenQuanWeiMiHei_36, LV_PART_MAIN);
     lv_label_set_long_mode(widc.weather_label, LV_LABEL_LONG_WRAP);
     lv_label_set_text(widc.weather_label, "未知");
 }
@@ -1188,23 +1190,23 @@ void create_weather_info_display_bottom(lv_obj_t *left_container, lv_obj_t *righ
 {
     // Left
     widc.province_label = lv_label_create(left_container);
-    lv_obj_set_style_text_font(widc.province_label, &WenQuanWeiMiHei_48, LV_PART_MAIN);
-    lv_label_set_text(widc.province_label, "测试：北京");
+    lv_obj_set_style_text_font(widc.province_label, &WenQuanWeiMiHei_18, LV_PART_MAIN);
+    lv_label_set_text(widc.province_label, "测试:北京");
     lv_obj_align(widc.province_label, LV_ALIGN_TOP_MID, 0, 0);
 
     widc.city_label = lv_label_create(left_container);
-    lv_obj_set_style_text_font(widc.city_label, &WenQuanWeiMiHei_48, LV_PART_MAIN);
-    lv_label_set_text(widc.city_label, "测试：东城区");
+    lv_obj_set_style_text_font(widc.city_label, &WenQuanWeiMiHei_18, LV_PART_MAIN);
+    lv_label_set_text(widc.city_label, "测试:东城区");
     lv_obj_align(widc.city_label, LV_ALIGN_BOTTOM_MID, 0, 0);
 
     // Right
     widc.humidity_label = lv_label_create(right_container);
-    lv_obj_set_style_text_font(widc.humidity_label, &lv_font_montserrat_14, LV_PART_MAIN);
-    lv_label_set_text(widc.humidity_label, "测试：Humidity: 13%");
+    lv_obj_set_style_text_font(widc.humidity_label, &WenQuanWeiMiHei_18, LV_PART_MAIN);
+    lv_label_set_text(widc.humidity_label, "Humidity:13%");
     lv_obj_align(widc.humidity_label, LV_ALIGN_TOP_MID, 0, 0);
 
     widc.report_time_label = lv_label_create(right_container);
-    lv_obj_set_style_text_font(widc.report_time_label, &lv_font_montserrat_14, LV_PART_MAIN);
+    lv_obj_set_style_text_font(widc.report_time_label, &WenQuanWeiMiHei_12, LV_PART_MAIN);
     lv_label_set_text(widc.report_time_label, "2025-01-17 16:06:57");
     lv_obj_align(widc.report_time_label, LV_ALIGN_BOTTOM_MID, 0, 0);
 }
