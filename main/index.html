@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 设置</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        input[type=text], input[type=password] { width: calc(100% - 22px); padding: 10px; margin: 10px 0; }
+        button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>连接设置</h2>
+    <form action="/submit" method="post">
+        <label for="ssid"><b>SSID</b></label>
+        <input type="text" placeholder="输入 Wi-Fi SSID" name="ssid" required>
+
+        <label for="password"><b>Password</b></label>
+        <input type="password" placeholder="输入 Wi-Fi 密码" name="password" required>
+
+        <button type="submit">保存</button>
+    </form>
+</div>
+
+</body>
+</html>

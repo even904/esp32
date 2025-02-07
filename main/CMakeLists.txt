@@ -13,9 +13,11 @@ set(srcs
     "lcd_lv_init.c"
     "parse_json.c"
     "assets/kw_bg.c"
+    "hmi_app.c"
     )
 
 idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS "."
                     EMBED_TXTFILES
-                    amap_com_root_cert.pem)
+                    amap_com_root_cert.pem
+                    index.html)

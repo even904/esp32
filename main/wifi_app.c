@@ -4,7 +4,9 @@
 #include "esp_log.h"
 #include "esp_netif_types.h"
 #include "esp_sntp.h"
+#include "esp_wifi_types_generic.h"
 #include "freertos/projdefs.h"
+#include "hmi_app.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,7 +51,9 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
             xEventGroupClearBits(s_wifi_event_group, WIFI_IS_CONNECTED_BIT);
             xEventGroupClearBits(s_wifi_event_group, IP_IS_OBTAINED_BIT);
         }
-        ESP_LOGI(wifi_app_TAG, "connect to the AP fail,reason=%d", ((wifi_event_sta_disconnected_t *)event_data)->reason);
+        ESP_LOGI(
+            wifi_app_TAG, "connect to the AP fail,reason=%d", ((wifi_event_sta_disconnected_t *)event_data)->reason
+        );
     }
     else if(event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
@@ -64,7 +68,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         if(gettimeofday(NULL, NULL) != -1)
         {
             // 发起HTTPS请求
-            esp_err_t err = client_get_weather("330100", base);
+            esp_err_t err = client_get_weather("330100", base);//330100
             if(err == ESP_OK)
             {
                 xEventGroupSetBits(s_wifi_event_group, HTTP_GET_WEATHER_INFO_BIT);
@@ -79,6 +83,12 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_SINCE_BOOT_BIT);
     }
     // handle esp as AP events
+    else if(event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_START)
+    {
+        ESP_LOGI(wifi_app_TAG, "ESP32 AP START...");
+        start_webserver();
+        ESP_LOGI(wifi_app_TAG, "Application running. Ready to serve requests.");
+    }
     else if(event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED)
     {
         wifi_event_ap_staconnected_t *event = (wifi_event_ap_staconnected_t *)event_data;
@@ -88,7 +98,9 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
     else if(event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STADISCONNECTED)
     {
         wifi_event_ap_stadisconnected_t *event = (wifi_event_ap_stadisconnected_t *)event_data;
-        ESP_LOGI(wifi_app_TAG, "station " MACSTR " leave, AID=%d, reason=%d", MAC2STR(event->mac), event->aid, event->reason);
+        ESP_LOGI(
+            wifi_app_TAG, "station " MACSTR " leave, AID=%d, reason=%d", MAC2STR(event->mac), event->aid, event->reason
+        );
         xEventGroupClearBits(s_wifi_event_group, STAION_IS_CONNECTED_BIT);
     }
 }

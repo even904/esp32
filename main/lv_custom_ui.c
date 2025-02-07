@@ -1306,7 +1306,7 @@ void get_parsed_weather_info()
 
 void update_weather_info_display()
 {
-    ESP_LOGI(lv_custom_ui_TAG, "Updating weather info display...");
+    // ESP_LOGI(lv_custom_ui_TAG, "Updating weather info display...");
     if(widc.weather_icon_label != NULL)
     {
         lv_label_set_text(widc.weather_icon_label, get_weather_icon(parsed_weather_info.weather));
