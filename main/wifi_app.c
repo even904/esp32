@@ -8,6 +8,7 @@
 #include "freertos/projdefs.h"
 #include "hmi_app.h"
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,11 +20,11 @@
 #define AP_WIFI_CHANNEL 6
 #define MAX_STA_CONN    4
 
-#define ESP_MAXIMUM_RETRY 5  // Currently set to 5, HMI can change this value
-
 static const char *wifi_app_TAG = "WiFi";
 EventGroupHandle_t s_wifi_event_group;
-static int         s_retry_num = 0;
+static int         max_retry         = ESP_MAXIMUM_RETRY;
+static int         s_retry_num       = 0;
+static char        local_city_code[] = CITY_CODE;  // city code = 330100
 
 static void sntp_initialize_task(void *pvParameters)
 {
@@ -40,7 +41,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
     }
     else if(event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
-        if(s_retry_num < ESP_MAXIMUM_RETRY)
+        if(s_retry_num < max_retry)
         {
             esp_wifi_connect();
             s_retry_num++;
@@ -68,7 +69,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         if(gettimeofday(NULL, NULL) != -1)
         {
             // 发起HTTPS请求
-            esp_err_t err = client_get_weather("330100", base);//330100
+            esp_err_t err = client_get_weather(base);
             if(err == ESP_OK)
             {
                 xEventGroupSetBits(s_wifi_event_group, HTTP_GET_WEATHER_INFO_BIT);
@@ -86,8 +87,19 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
     else if(event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_START)
     {
         ESP_LOGI(wifi_app_TAG, "ESP32 AP START...");
-        start_webserver();
-        ESP_LOGI(wifi_app_TAG, "Application running. Ready to serve requests.");
+        // check if the web server is not already running
+        if((xEventGroupGetBits(s_wifi_event_group) & ESP_WEB_SERVER_RUNNING_BIT) == 0)
+        {
+            if(start_webserver() != NULL)
+            {
+                ESP_LOGI(wifi_app_TAG, "Application running. Ready to serve requests.");
+                xEventGroupSetBits(s_wifi_event_group, ESP_WEB_SERVER_RUNNING_BIT);
+            }  // only start the web server once
+        }
+        else
+        {
+            ESP_LOGI(wifi_app_TAG, "Application already running. Avoid multi-starting!");
+        }
     }
     else if(event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED)
     {
@@ -105,12 +117,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
     }
 }
 
-void wifi_init_sta_ap(
-    const char *ap_to_conn_ssid,
-    const char *ap_to_conn_password,
-    const char *esp_as_ap_ssid,
-    const char *esp_as_ap_password
-)
+void initialize_nvs()
 {
     // 1. Initialize NVS
     esp_err_t ret = nvs_flash_init();
@@ -120,7 +127,15 @@ void wifi_init_sta_ap(
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+}
 
+void wifi_init_sta_ap(
+    const char *ap_to_conn_ssid,
+    const char *ap_to_conn_password,
+    const char *esp_as_ap_ssid,
+    const char *esp_as_ap_password
+)
+{
     // 2. Create event group
     s_wifi_event_group = xEventGroupCreate();
 
@@ -181,6 +196,63 @@ void wifi_init_sta_ap(
     );
 
     ESP_ERROR_CHECK(esp_wifi_start());
+}
+
+void wifi_reinit_sta(
+    const char *ap_to_conn_ssid,      //
+    const char *ap_to_conn_password,  //
+    int         max_retry_num         //
+)
+{
+    s_retry_num = 0;
+
+    // Stop the Wi-Fi station interface
+    esp_wifi_stop();
+
+    // Clear the connection bits
+    xEventGroupClearBits(s_wifi_event_group, WIFI_IS_CONNECTED_BIT);
+    xEventGroupClearBits(s_wifi_event_group, IP_IS_OBTAINED_BIT);
+
+    // Update Wi-Fi station configuration
+    wifi_config_t wifi_config_sta = {
+        .sta = {
+            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+            .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
+            .sae_h2e_identifier = "",
+        },
+    };
+    strcpy((char *)wifi_config_sta.sta.ssid, ap_to_conn_ssid);
+    strcpy((char *)wifi_config_sta.sta.password, ap_to_conn_password);
+
+    esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config_sta);
+
+    max_retry = max_retry_num;
+
+    // Start Wi-Fi station interface again
+    esp_wifi_start();
+
+    ESP_LOGI(
+        wifi_app_TAG, "STA reinitialized with new SSID: %s and Password: %s", ap_to_conn_ssid, ap_to_conn_password
+    );
+}
+
+void local_city_code_update(char *new_city_code)
+{
+    if(new_city_code != NULL)
+    {
+        ESP_LOGI(wifi_app_TAG, "Local city code is:%s", local_city_code);
+        ESP_LOGI(wifi_app_TAG, "New city code is:%s", new_city_code);
+        snprintf(local_city_code, strlen(local_city_code) + 1, "%s", new_city_code);
+        esp_err_t err = client_get_weather(base);
+        if(err == ESP_OK)
+        {
+            xEventGroupSetBits(s_wifi_event_group, HTTP_GET_WEATHER_INFO_BIT);
+        }
+    }
+    else
+    {
+        ESP_LOGI(wifi_app_TAG, "Local city code update failed, null pointer");
+    }
 }
 
 static void time_sync_notification_cb(struct timeval *tv)
@@ -334,7 +406,7 @@ extern const char amap_com_root_cert_pem_end[] asm("_binary_amap_com_root_cert_p
 
 raw_weather_info_t raw_weather_info;
 
-esp_err_t client_get_weather(char *city_code, extensions_type extensions)
+esp_err_t client_get_weather(extensions_type extensions)
 {
     esp_err_t e;
     // Use snprintf, avoid buffer overflow
@@ -344,7 +416,7 @@ esp_err_t client_get_weather(char *city_code, extensions_type extensions)
         sizeof(url_str),
         "https://restapi.amap.com/v3/weather/"
          "weatherInfo?city=%s&key=%s&extensions=%s",
-        city_code,
+        local_city_code,
         AMAP_API_KEY,
         extensions != all ? "base" : "all"
     );

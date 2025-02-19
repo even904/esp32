@@ -4,6 +4,7 @@
 #include "custom_font.h"
 #include "custom_image.h"
 #include "font/lv_font.h"
+#include "lv_api_map_v8.h"
 #include "misc/lv_anim.h"
 #include "misc/lv_area.h"
 #include "misc/lv_color.h"
@@ -16,8 +17,9 @@
 #include <stdio.h>
 #include <string.h>
 
-
 static const char *lv_custom_ui_TAG = "UI";
+void update_background_image(lv_img_dsc_t *new_bg_img);
+
 
 const uint8_t rain_map[] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -1121,6 +1123,16 @@ void create_time_display(lv_obj_t *left_container, lv_obj_t *right_container)
     }
 }
 
+
+
+void device_info_update_bg_image(int bg_image)
+{
+    switch(bg_image){
+        case 0:update_background_image((lv_img_dsc_t *)&kw_bg);break;
+        default:break;
+    }
+}
+
 void update_time_display()
 {
     static uint8_t cnt = 0;
@@ -1217,16 +1229,17 @@ void create_weather_info_display_upper(lv_obj_t *left_container, lv_obj_t *right
     // Right
     widc.weather_label = lv_label_create(right_container);
     lv_obj_set_style_text_font(widc.weather_label, &WenQuanWeiMiHei_24, LV_PART_MAIN);
-    lv_obj_set_width(widc.weather_label, 50);
+    lv_obj_set_width(widc.weather_label, LV_SIZE_CONTENT);
     lv_label_set_long_mode(widc.weather_label, LV_LABEL_LONG_WRAP);
-    lv_obj_set_height(widc.weather_label, LV_SIZE_CONTENT);
+    lv_obj_set_height(widc.weather_label, 50);
     lv_label_set_text(widc.weather_label, "未知");
-    lv_obj_align(widc.weather_label, LV_ALIGN_LEFT_MID, 7, 0);
+    lv_obj_align(widc.weather_label, LV_ALIGN_TOP_LEFT, 0, 13);
 
     widc.temperature_label = lv_label_create(right_container);
     lv_obj_set_style_text_font(widc.temperature_label, &WenQuanWeiMiHei_36, LV_PART_MAIN);
     lv_label_set_text(widc.temperature_label, "??°C");
-    lv_obj_align(widc.temperature_label, LV_ALIGN_RIGHT_MID, -7, 0);
+    lv_obj_set_height(widc.temperature_label, 50);
+    lv_obj_align(widc.temperature_label, LV_ALIGN_BOTTOM_LEFT, 0, -7);
 }
 
 void create_weather_info_display_bottom(lv_obj_t *left_container, lv_obj_t *middle_container, lv_obj_t *right_container)
@@ -1379,21 +1392,23 @@ void update_weather_info_display()
 /*|    Bottom Container  |*/
 /*|                      |*/
 /* -----------------------*/
+static lv_style_t main_container_style;
+lv_obj_t         *main_container;
+
 void create_main_display(lv_disp_t *disp)
 {
-    static lv_style_t container_style;
-    lv_style_init(&container_style);
-    lv_style_set_layout(&container_style, LV_LAYOUT_FLEX);
-    lv_style_set_flex_flow(&container_style, LV_FLEX_FLOW_COLUMN);
-    lv_style_set_pad_all(&container_style, 0);  // 设置所有方向的内边距为0
-    lv_style_set_pad_row(&container_style, 0);  // 确保行之间的间距也为0
-    lv_style_set_pad_column(&container_style, 0);
-    lv_style_set_border_width(&container_style, 0);
-    lv_style_set_bg_img_src(&container_style, &kw_bg);
+    lv_style_init(&main_container_style);
+    lv_style_set_layout(&main_container_style, LV_LAYOUT_FLEX);
+    lv_style_set_flex_flow(&main_container_style, LV_FLEX_FLOW_COLUMN);
+    lv_style_set_pad_all(&main_container_style, 0);  // 设置所有方向的内边距为0
+    lv_style_set_pad_row(&main_container_style, 0);  // 确保行之间的间距也为0
+    lv_style_set_pad_column(&main_container_style, 0);
+    lv_style_set_border_width(&main_container_style, 0);
+    lv_style_set_bg_img_src(&main_container_style, &kw_bg);
     //
     // 创建一个容器作为主界面
-    lv_obj_t *main_container = lv_obj_create(lv_disp_get_scr_act(disp));
-    lv_obj_add_style(main_container, &container_style, 0);
+    main_container = lv_obj_create(lv_disp_get_scr_act(disp));
+    lv_obj_add_style(main_container, &main_container_style, 0);
     lv_obj_set_size(main_container, lv_disp_get_hor_res(NULL),
                     lv_disp_get_ver_res(NULL));  // 设置容器大小为全屏
     lv_obj_center(main_container);               // 将容器居中对齐
@@ -1410,6 +1425,18 @@ void create_main_display(lv_disp_t *disp)
     create_middle_container(main_container, &child_container_style);
     create_bottom_container(main_container, &child_container_style);
 }
+
+void update_background_image(lv_img_dsc_t *new_bg_img)
+{
+    lv_style_set_bg_img_src(&main_container_style, new_bg_img);  // 更新背景图片
+    lv_obj_refresh_style(main_container, LV_PART_MAIN, LV_STYLE_BG_IMAGE_SRC);
+}
+
+// 在需要的地方调用此函数更新背景图片
+// example:
+// lv_img_dsc_t new_bg; // 新背景图片的描述符
+// ...（加载或初始化new_bg）
+// update_background_image(main_container, &new_bg);
 
 /* -----------------------*/
 /*|        |      |      |*/

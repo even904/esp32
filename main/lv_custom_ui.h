@@ -13,6 +13,7 @@ void display_test_image(lv_disp_t *disp);
 void create_main_display(lv_disp_t *disp);
 void update_time_display();
 
+void device_info_update_bg_image(int bg_image);
 void get_parsed_weather_info();
 void update_weather_info_display();
 

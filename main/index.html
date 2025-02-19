@@ -4,27 +4,166 @@
     <title>ESP32 设置</title>
     <meta charset="UTF-8">
     <style>
-        body { font-family: Arial, sans-serif; }
-        .container { max-width: 400px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
-        input[type=text], input[type=password] { width: calc(100% - 22px); padding: 10px; margin: 10px 0; }
-        button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input[type=text],
+        input[type=password] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* 成功消息样式 */
+        #successMessage {
+            display: none; /* 默认隐藏 */
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            text-align: center;
+            color: #155724;
+        }
     </style>
 </head>
+
 <body>
 
 <div class="container">
     <h2>连接设置</h2>
-    <form action="/submit" method="post">
+    <form id="settingsForm">
         <label for="ssid"><b>SSID</b></label>
-        <input type="text" placeholder="输入 Wi-Fi SSID" name="ssid" required>
+        <input type="text" placeholder="输入 Wi-Fi SSID" name="ssid">
 
         <label for="password"><b>Password</b></label>
-        <input type="password" placeholder="输入 Wi-Fi 密码" name="password" required>
+        <input type="password" placeholder="输入 Wi-Fi 密码" name="password">
+
+        <label for="conn_retry"><b>WiFi断连重试次数</b></label>
+        <input type="text" placeholder="输入重试次数，0表示始终尝试连接" name="conn_retry">
+
+        <h2>天气设置</h2>
+        <label for="api_key"><b>API_KEY</b></label>
+        <input type="text" placeholder="输入Amap开放平台的API_KEY" name="api_key">
+
+        <label for="city_code"><b>城市编码</b></label>
+        <input type="text" placeholder="输入6位城市编码（邮编，可能不完全一致）" name="city_code">
+
+        <h2>外观设置</h2>
+        <label for="bg_image"><b>背景图片（填写编号）</b></label>
+        <input type="text" placeholder="输入背景图片编号" name="bg_image">
 
         <button type="submit">保存</button>
     </form>
+    <div id="successMessage">保存成功！</div>
 </div>
+
+<script>
+document.getElementById('settingsForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // 阻止默认提交行为
+
+    // 获取表单中的所有输入元素
+    const formData = new FormData(this);
+    const formFields = {
+        ssid: formData.get('ssid'),
+        password: formData.get('password'),
+        conn_retry: formData.get('conn_retry'),
+        api_key: formData.get('api_key'),
+        city_code: formData.get('city_code'),
+        bg_image: formData.get('bg_image')
+    };
+
+    // 长度校验规则
+    const validationRules = {
+        ssid: { min: 1, max: 32 }, // SSID最小长度为1，最大长度为32
+        password: { min: 8, max: 64 }, // Wi-Fi 密码最小长度为8，最大长度为64
+        conn_retry: { min: 1, max: 5 }, // WiFi断连重试次数最小长度为1，最大长度为3
+        api_key: { min: 32, max: 32 }, // Amap开放平台的API_KEY最小长度为10，最大长度为50
+        city_code: { min: 6, max: 6 }, // 城市编码长度为6
+        bg_image: { min: 1, max: 2 } // 背景图片编号长度为1或2
+    };
+
+    // 可选字段允许为空
+    const optionalFields = ['ssid', 'password', 'conn_retry', 'api_key', 'city_code', 'bg_image'];
+
+    // 验证逻辑
+    let isValid = true;
+    for (const [field, value] of Object.entries(formFields)) {
+        const fieldRules = validationRules[field];
+        if (fieldRules) {
+            // 如果字段是可选的且为空，则跳过验证
+            if (optionalFields.includes(field) && value.trim() === '') {
+                continue;
+            }
+
+            if (value.length < fieldRules.min || value.length > fieldRules.max) {
+                isValid = false;
+                alert(`${field.toUpperCase()} 的输入长度应在 ${fieldRules.min}-${fieldRules.max} 之间。`);
+                break;
+            }
+        }
+    }
+
+    // 如果输入有效，则提交数据
+    if (isValid) {
+        // 将表单数据转换为普通对象
+        const formObject = {};
+        formData.forEach((value, key) => formObject[key] = value);
+
+        // 将表单数据转换为JSON字符串
+        const jsonData = JSON.stringify(formObject);
+
+        // 使用fetch API提交数据
+        fetch('/submit', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: jsonData
+        })
+        .then(response => {
+            if (response.ok) {
+                // 显示保存成功的消息
+                const successMessage = document.getElementById('successMessage');
+                successMessage.style.display = 'block';
+
+                // 几秒后自动隐藏消息
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 3000); // 3000毫秒 = 3秒
+            } else {
+                throw new Error('服务器响应失败，状态码：' + response.status);
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            alert("保存成功了，但服务器懒得响应。（或者保存失败了👿）");
+        });
+    }
+});
+</script>
 
 </body>
 </html>

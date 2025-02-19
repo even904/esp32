@@ -6,14 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// static const char *parse_json_TAG = "PARSE_JSON";
-
-// const char *json_str
-//     = "{\"status\":\"1\",\"count\":\"1\",\"info\":\"OK\",\"infocode\":\"10000\",\"lives\":[{\"province\":\"北京\","
-//       "\"city\":\"东城区\",\"adcode\":\"110101\",\"weather\":\"晴\",\"temperature\":\"-4\",\"winddirection\":\"西\","
-//       "\"windpower\":\"≤3\",\"humidity\":\"19\",\"reporttime\":\"2025-01-14 "
-//       "23:32:50\",\"temperature_float\":\"-4.0\",\"humidity_float\":\"19.0\"}]}";
-
 weather_info_t parsed_weather_info = {.valid_flag = false};
 
 void parse_json_update_weather(const char *json_data)
@@ -195,3 +187,4 @@ void parse_json_update_weather(const char *json_data)
     // 清理
     cJSON_Delete(root);
 }
+

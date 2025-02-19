@@ -26,6 +26,7 @@
 #include "lcd_lv_init.h"
 
 #include "esp_http_client.h"
+#include "hmi_app.h"
 #include "lv_custom_ui.h"
 #include "parse_json.h"
 #include "widgets/image/lv_image.h"
@@ -71,10 +72,11 @@ static void lv_timer_callback(lv_timer_t *timer)
     static uint64_t cnt = 0;
     update_time_display();
     update_weather_info_display();
+    // device_update_confiuration(&device_info); // test
     cnt++;
     if(cnt == 1200)
     {
-        esp_err_t err = client_get_weather("330100", base);
+        esp_err_t err = client_get_weather(base);
         if(err == ESP_OK)
         {
             xEventGroupSetBits(s_wifi_event_group, HTTP_GET_WEATHER_INFO_BIT);
@@ -127,13 +129,9 @@ void app_main(void)
     lv_disp_t *disp = lvgl_config_init();
     // Check if display is initialized, if so, disp pointer is not NULL
     ESP_LOGI(TAG, "Is num of disp_handle: %x", (uintptr_t)(disp));
-    // lv_disp_set_rotation(disp, LV_DISPLAY_ROTATION_270);
     ESP_LOGI(TAG, "Display LVGL Test Image");
-    // check_heap_memory();
     if(lvgl_port_lock(0))
     {
-        // display_test_image(disp);
-        // create_loading_animation(disp);
         create_main_display(disp);
         lvgl_port_unlock();
     }
@@ -141,7 +139,10 @@ void app_main(void)
     check_heap_memory("LVGL Initialized");
 #endif
     // wifi configuration
-    wifi_init_sta_ap(AP_TO_CONN_SSID, AP_TO_CONN_PASS, ESP_AS_AP_SSID, ESP_AS_AP_PASS);
+    initialize_nvs();
+    device_info_init(&device_info,AP_TO_CONN_SSID,AP_TO_CONN_PASS,AMAP_API_KEY,CITY_CODE,ESP_MAXIMUM_RETRY,0);
+    wifi_init_sta_ap(device_info.ssid, device_info.passwd, ESP_AS_AP_SSID, ESP_AS_AP_PASS);
+
 #if ENABLE_MEMORY_CHECK
     check_heap_memory("WiFi Initialized");
 #endif
