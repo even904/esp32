@@ -81,6 +81,8 @@ void device_info_init(
         info->bg_image = bg_image;
         ESP_LOGW(TAG, "Failed to load bg_image from NVS, using default: %d", bg_image);
     }
+    local_city_code_update(info->city_code);
+    local_api_key_update(info->api_key);
     device_update_nvs_info(info);
 }
 
@@ -194,7 +196,14 @@ esp_err_t nvs_load_info_int(char *key, int *val)
 esp_err_t device_update_confiuration(device_info_t *info)
 {
     wifi_reinit_sta(info->ssid, info->passwd, info->conn_retry);
-    local_city_code_update(info->city_code);
+    if(local_city_code_update(info->city_code) == ESP_OK)
+    {
+        esp_err_t err = client_get_weather(base);
+        if(err == ESP_OK)
+        {
+            xEventGroupSetBits(s_wifi_event_group, HTTP_GET_WEATHER_INFO_BIT);
+        }
+    }
     device_info_update_bg_image(info->bg_image);
     return ESP_OK;
 }

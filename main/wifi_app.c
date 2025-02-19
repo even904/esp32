@@ -25,6 +25,7 @@ EventGroupHandle_t s_wifi_event_group;
 static int         max_retry         = ESP_MAXIMUM_RETRY;
 static int         s_retry_num       = 0;
 static char        local_city_code[] = CITY_CODE;  // city code = 330100
+static char        local_api_key[]   = AMAP_API_KEY;
 
 static void sntp_initialize_task(void *pvParameters)
 {
@@ -236,23 +237,38 @@ void wifi_reinit_sta(
     );
 }
 
-void local_city_code_update(char *new_city_code)
+esp_err_t local_city_code_update(char *new_city_code)
 {
+    esp_err_t ret = ESP_FAIL;
     if(new_city_code != NULL)
     {
         ESP_LOGI(wifi_app_TAG, "Local city code is:%s", local_city_code);
         ESP_LOGI(wifi_app_TAG, "New city code is:%s", new_city_code);
         snprintf(local_city_code, strlen(local_city_code) + 1, "%s", new_city_code);
-        esp_err_t err = client_get_weather(base);
-        if(err == ESP_OK)
-        {
-            xEventGroupSetBits(s_wifi_event_group, HTTP_GET_WEATHER_INFO_BIT);
-        }
+        ret = ESP_OK;
     }
     else
     {
         ESP_LOGI(wifi_app_TAG, "Local city code update failed, null pointer");
     }
+    return ret;
+}
+
+esp_err_t local_api_key_update(char *new_api_key)
+{
+    esp_err_t ret = ESP_FAIL;
+    if(new_api_key != NULL)
+    {
+        ESP_LOGI(wifi_app_TAG, "Local api key is:%s", local_api_key);
+        ESP_LOGI(wifi_app_TAG, "New api key is:%s", new_api_key);
+        snprintf(local_api_key, strlen(local_api_key) + 1, "%s", new_api_key);
+        ret = ESP_OK;
+    }
+    else
+    {
+        ESP_LOGI(wifi_app_TAG, "Local api key update failed, null pointer");
+    }
+    return ret;
 }
 
 static void time_sync_notification_cb(struct timeval *tv)
@@ -417,7 +433,7 @@ esp_err_t client_get_weather(extensions_type extensions)
         "https://restapi.amap.com/v3/weather/"
          "weatherInfo?city=%s&key=%s&extensions=%s",
         local_city_code,
-        AMAP_API_KEY,
+        local_api_key,
         extensions != all ? "base" : "all"
     );
 
