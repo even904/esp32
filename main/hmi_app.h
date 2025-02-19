@@ -23,6 +23,7 @@ typedef struct
     char city_code[MAX_CITY_CODE_STR_LEN];
     char api_key[MAX_API_KEY_STR_LEN];
     int  bg_image;
+    bool wifi_reinit_flag;// true:need reinit ,false:no need reinit
 } device_info_t;
 
 extern device_info_t device_info;

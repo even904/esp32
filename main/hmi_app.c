@@ -81,8 +81,11 @@ void device_info_init(
         info->bg_image = bg_image;
         ESP_LOGW(TAG, "Failed to load bg_image from NVS, using default: %d", bg_image);
     }
+    // Reset reinit flag
+    info->wifi_reinit_flag = false;
     local_city_code_update(info->city_code);
     local_api_key_update(info->api_key);
+    device_info_update_bg_image(info->bg_image);
     device_update_nvs_info(info);
 }
 
@@ -195,7 +198,10 @@ esp_err_t nvs_load_info_int(char *key, int *val)
 
 esp_err_t device_update_confiuration(device_info_t *info)
 {
-    wifi_reinit_sta(info->ssid, info->passwd, info->conn_retry);
+    if(info->wifi_reinit_flag == true)
+    {
+        wifi_reinit_sta(info->ssid, info->passwd, info->conn_retry);
+    }
     if(local_city_code_update(info->city_code) == ESP_OK)
     {
         esp_err_t err = client_get_weather(base);
@@ -255,22 +261,36 @@ static esp_err_t submit_handler(httpd_req_t *req)
         ESP_LOGI(TAG, "Parsed API Key: %s", api_key);
         ESP_LOGI(TAG, "Parsed Background Image: %s", bg_image);
 
-        if (ssid && strlen(ssid) > 0) {
-            snprintf(device_info.ssid, MAX_SSID_STR_LEN, "%s", ssid);
+        if(ssid && strlen(ssid) > 0)
+        {
+            if(strcmp(device_info.ssid, ssid) != 0)
+            {
+                snprintf(device_info.ssid, MAX_SSID_STR_LEN, "%s", ssid);
+                device_info.wifi_reinit_flag = true;
+            }
         }
-        if (password && strlen(password) > 0) {
-            snprintf(device_info.passwd, MAX_PASSWD_STR_LEN, "%s", password);
+        if(password && strlen(password) > 0)
+        {
+            if(strcmp(device_info.passwd, password) != 0)
+            {
+                snprintf(device_info.passwd, MAX_PASSWD_STR_LEN, "%s", password);
+                device_info.wifi_reinit_flag = true;
+            }
         }
-        if (api_key && strlen(api_key) > 0) {
+        if(api_key && strlen(api_key) > 0)
+        {
             snprintf(device_info.api_key, MAX_API_KEY_STR_LEN, "%s", api_key);
         }
-        if (city_code && strlen(city_code) > 0) {
+        if(city_code && strlen(city_code) > 0)
+        {
             snprintf(device_info.city_code, MAX_CITY_CODE_STR_LEN, "%s", city_code);
         }
-        if (conn_retry && strlen(conn_retry) > 0) {
+        if(conn_retry && strlen(conn_retry) > 0)
+        {
             device_info.conn_retry = atoi(conn_retry);
         }
-        if (bg_image && strlen(bg_image) > 0) {
+        if(bg_image && strlen(bg_image) > 0)
+        {
             device_info.bg_image = atoi(bg_image);
         }
         device_update_nvs_info(&device_info);
@@ -298,7 +318,7 @@ httpd_handle_t start_webserver(void)
 {
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.stack_size = 8192;
+    config.stack_size     = 8192;
     // config.server_port = 5000;
 
     // Start the httpd server

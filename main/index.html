@@ -62,22 +62,23 @@
         <input type="password" placeholder="输入 Wi-Fi 密码" name="password">
 
         <label for="conn_retry"><b>WiFi断连重试次数</b></label>
-        <input type="text" placeholder="输入重试次数，0表示始终尝试连接" name="conn_retry">
+        <input type="text" placeholder="输入wifi断连重试次数，间隔为1s" name="conn_retry">
 
         <h2>天气设置</h2>
         <label for="api_key"><b>API_KEY</b></label>
         <input type="text" placeholder="输入Amap开放平台的API_KEY" name="api_key">
 
         <label for="city_code"><b>城市编码</b></label>
-        <input type="text" placeholder="输入6位城市编码（邮编，可能不完全一致）" name="city_code">
+        <input type="text" placeholder="输入6位城市编码" name="city_code">
 
         <h2>外观设置</h2>
         <label for="bg_image"><b>背景图片（填写编号）</b></label>
-        <input type="text" placeholder="输入背景图片编号" name="bg_image">
+        <input type="text" placeholder="输入背景图片编号，当前0~5有效" name="bg_image">
 
         <button type="submit">保存</button>
     </form>
     <div id="successMessage">保存成功！</div>
+    <div> PS：访问 https://lbs.amap.com/api/webservice/download 获取城市编码表 </div>
 </div>
 
 <script>

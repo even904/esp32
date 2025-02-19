@@ -1,3 +1,4 @@
+file(GLOB assets_srcs "assets/*.c")
 set(srcs
     "main.c"
     "decode_image.c"
@@ -12,7 +13,7 @@ set(srcs
     "lv_custom_ui.c"
     "lcd_lv_init.c"
     "parse_json.c"
-    "assets/kw_bg.c"
+    ${assets_srcs}
     "hmi_app.c"
     )
 
