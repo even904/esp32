@@ -151,41 +151,45 @@ void create_time_display(lv_obj_t *left_container, lv_obj_t *right_container)
 
 void device_info_update_bg_image(int bg_image)
 {
-    switch(bg_image)
+    if(lvgl_port_lock(0))
     {
-    case 0:
-        update_background_image((lv_img_dsc_t *)&kw_bg);
-        break;
-    case 1:
-        update_background_image((lv_img_dsc_t *)&missaka);
-        break;
-    case 2:
-        update_background_image((lv_img_dsc_t *)&k1);
-        break;
-    case 3:
-        update_background_image((lv_img_dsc_t *)&fuji);
-        break;
-    case 4:
-        update_background_image((lv_img_dsc_t *)&hero);
-        break;
-    case 5:
-        update_background_image((lv_img_dsc_t *)&roxy);
-        break;
-    // No enough flash memory, partition table only support 3M factory data 
-    // case 6:
-    //     update_background_image((lv_img_dsc_t *)&bridge);
-    //     break;
-    // case 7:
-    //     update_background_image((lv_img_dsc_t *)&lukiya);
-    //     break;
-    // case 8:
-    //     update_background_image((lv_img_dsc_t *)&cat);
-    //     break;
-    // case 9:
-    //     update_background_image((lv_img_dsc_t *)&WuKong);
-    //     break;
-    default:
-        break;
+        switch(bg_image)
+        {
+        case 0:
+            update_background_image((lv_img_dsc_t *)&kw_bg);
+            break;
+        case 1:
+            update_background_image((lv_img_dsc_t *)&missaka);
+            break;
+        case 2:
+            update_background_image((lv_img_dsc_t *)&k1);
+            break;
+        case 3:
+            update_background_image((lv_img_dsc_t *)&fuji);
+            break;
+        case 4:
+            update_background_image((lv_img_dsc_t *)&hero);
+            break;
+        case 5:
+            update_background_image((lv_img_dsc_t *)&roxy);
+            break;
+        // No enough flash memory, partition table only support 3M factory data
+        // case 6:
+        //     update_background_image((lv_img_dsc_t *)&bridge);
+        //     break;
+        // case 7:
+        //     update_background_image((lv_img_dsc_t *)&lukiya);
+        //     break;
+        // case 8:
+        //     update_background_image((lv_img_dsc_t *)&cat);
+        //     break;
+        // case 9:
+        //     update_background_image((lv_img_dsc_t *)&WuKong);
+        //     break;
+        default:
+            break;
+        }
+        lvgl_port_unlock();
     }
 }
 

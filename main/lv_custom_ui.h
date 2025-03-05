@@ -6,6 +6,7 @@
 #include "lvgl.h"
 #include "parse_json.h"
 #include "wifi_app.h"
+#include "esp_lvgl_port.h"
 
 
 void display_test_image(lv_disp_t *disp);
