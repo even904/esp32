@@ -58,4 +58,4 @@ flowchart LR
 
 |WechatPay|Alipay|
 |---|---|
-|<img src="https://raw.githubusercontent.com/even904/Images/main/pic/WechatPay.png" alt="" height="500">|<img src="https://raw.githubusercontent.com/even904/Images/main/pic/Alipay.jpeg" alt="" height="500">|
+|<img src="https://raw.githubusercontent.com/even904/Images/main/pic/WechatPay.png" alt="" height="199">|<img src="https://raw.githubusercontent.com/even904/Images/main/pic/Alipay.jpeg" alt="" height="200">|
